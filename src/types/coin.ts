@@ -4,7 +4,7 @@ export type Coin = {
   ttl: number;
 };
 
-type vectorPosition = {
+export type vectorPosition = {
   x: number;
   y: number;
   z: number;

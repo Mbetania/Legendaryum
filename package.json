@@ -1,10 +1,15 @@
 {
-  "name": "Legendaryum",
+  "name": "legendaryum",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node --experimental-specifier-resolution=node  ./dist/app.js",
+    "build": "tsc",
+    "dev": "tsc -w",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "socket": "node --experimental-specifier-resolution=node  ./src/script.js"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +25,7 @@
   },
   "devDependencies": {
     "@types/uuid": "^9.0.2",
+    "socket.io-client": "^4.7.0",
     "typescript": "^5.1.3"
   }
 }
