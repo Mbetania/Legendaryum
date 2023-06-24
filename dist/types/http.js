@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.HTTP_STATUS = exports.HTTP_METHODS = void 0;
 var HTTP_METHODS;
 (function (HTTP_METHODS) {
     HTTP_METHODS["GET"] = "GET";
@@ -9,7 +6,6 @@ var HTTP_METHODS;
     HTTP_METHODS["UPDATE"] = "UPDATE";
     HTTP_METHODS["DELETE"] = "DELETE";
 })(HTTP_METHODS || (HTTP_METHODS = {}));
-exports.HTTP_METHODS = HTTP_METHODS;
 var HTTP_STATUS;
 (function (HTTP_STATUS) {
     HTTP_STATUS[HTTP_STATUS["OK"] = 200] = "OK";
@@ -22,4 +18,4 @@ var HTTP_STATUS;
     HTTP_STATUS[HTTP_STATUS["CONFLICT"] = 409] = "CONFLICT";
     HTTP_STATUS[HTTP_STATUS["INTERNAL_SERVER_ERROR"] = 500] = "INTERNAL_SERVER_ERROR";
 })(HTTP_STATUS || (HTTP_STATUS = {}));
-exports.HTTP_STATUS = HTTP_STATUS;
+export { HTTP_METHODS, HTTP_STATUS };

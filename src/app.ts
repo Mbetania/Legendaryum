@@ -1,28 +1,31 @@
 import express from 'express';
 import { generateAndStoreCoins, storeCoins } from './models/coins';
-import { HTTP_STATUS } from './types/http';
 import {createServer} from 'http';
-import { Server } from 'socket.io'
+import { Server } from 'socket.io';
 import { Redis } from 'ioredis';
 import { Coin } from './types/coin';
-import configRooms from './roomConfig.json';
-import { Key } from 'readline';
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { GlobalConfig, RoomConfig } from './types/room';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const port = 3000;
 const redis = new Redis();
 const httpServer = createServer(app);
-const io = new Server(httpServer)
+const io = new Server(httpServer);
+const rawData = readFileSync(join(__dirname, 'roomConfig.json'), 'utf-8');
+const config: GlobalConfig = JSON.parse(rawData);
 
-const config: GlobalConfig = configRooms
-
-for (const room in configRooms) {
+for (const room in config) { // Changed from configRooms to config
   const pickedRoom: RoomConfig = config[room];
-  const { coinsAmount, area} = pickedRoom
+  const { coinsAmount, area} = pickedRoom;
   generateAndStoreCoins(room, coinsAmount, area);
 }
+
 
 io.on('connection', async(socket) => {
   console.log(`A user Connected with id ${socket.id}`);
