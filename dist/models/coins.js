@@ -32,13 +32,13 @@ export const generateAndStoreCoins = (room, coinsAmount, area) => __awaiter(void
         };
         coins.push(coin);
     }
-    yield storeCoins(room, coins, redisClient);
+    yield storeCoins(room, coins);
 });
 //almacena coins en redis
-export const storeCoins = (room, coins, client) => __awaiter(void 0, void 0, void 0, function* () {
+export const storeCoins = (room, coins) => __awaiter(void 0, void 0, void 0, function* () {
     const key = `coins:${room}`;
     const value = JSON.stringify(coins);
-    yield client.set(key, value, 'EX', 60 * 60); // TTL de 1 hora
+    yield redisClient.set(key, value, 'EX', 60 * 60); // TTL de 1 hora
 });
 export const getCoinsInRoom = (room) => __awaiter(void 0, void 0, void 0, function* () {
     const key = `coins:${room}`;
@@ -46,5 +46,17 @@ export const getCoinsInRoom = (room) => __awaiter(void 0, void 0, void 0, functi
     if (!coinsString) {
         throw new Error(`No coins found in room ${room}`);
     }
-    return JSON.parse(coinsString);
+    const coins = JSON.parse(coinsString);
+    console.log(`Retrieved ${coins.length} coins from room ${room}`);
+    return coins;
+});
+export const getUserCoins = (userId, client) => __awaiter(void 0, void 0, void 0, function* () {
+    return client.smembers(`user:${userId}:coins`);
+});
+export const isCoinAssociatedToUser = (userId, coinId, client) => __awaiter(void 0, void 0, void 0, function* () {
+    const isMember = yield client.sismember(`user:${userId}:coins`, coinId);
+    return isMember === 1;
+});
+export const associateCoinToUser = (userId, coinId, client) => __awaiter(void 0, void 0, void 0, function* () {
+    yield client.sadd(`user:${userId}:coins`, coinId);
 });

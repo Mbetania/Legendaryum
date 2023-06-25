@@ -30,14 +30,14 @@ export const generateAndStoreCoins = async (room: string, coinsAmount: number, a
     };
     coins.push(coin);
   }
-  await storeCoins(room, coins, redisClient);
+  await storeCoins(room, coins);
 }
 
 //almacena coins en redis
-export const storeCoins = async(room: string, coins: Coin[], client: Redis): Promise<void> => {
+export const storeCoins = async(room: string, coins: Coin[]): Promise<void> => {
   const key = `coins:${room}`;
   const value = JSON.stringify(coins);
-  await client.set(key, value, 'EX', 60 * 60); // TTL de 1 hora
+  await redisClient.set(key, value, 'EX', 60 * 60); // TTL de 1 hora
 }
 
 export const getCoinsInRoom = async (room: string): Promise<Coin[]> => {
@@ -48,5 +48,20 @@ export const getCoinsInRoom = async (room: string): Promise<Coin[]> => {
     throw new Error(`No coins found in room ${room}`);
   }
 
-  return JSON.parse(coinsString);
+  const coins = JSON.parse(coinsString);
+  console.log(`Retrieved ${coins.length} coins from room ${room}`);
+  return coins;
+};
+
+export const getUserCoins = async (userId: string, client: Redis): Promise<string[]> => {
+  return client.smembers(`user:${userId}:coins`);
+};
+
+export const isCoinAssociatedToUser = async (userId: string, coinId: string, client: Redis): Promise<boolean> => {
+  const isMember = await client.sismember(`user:${userId}:coins`, coinId);
+  return isMember === 1;
+};
+
+export const associateCoinToUser = async (userId: string, coinId: string, client: Redis): Promise<void> => {
+  await client.sadd(`user:${userId}:coins`, coinId);
 };

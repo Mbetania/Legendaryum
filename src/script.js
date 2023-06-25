@@ -23,6 +23,6 @@ socket.on('coinUnavailable', (coinId) => {
 });
 
 // You can define a function to grab coins
-function grabCoin(coinId) {
+export const grabCoin = (coinId) => {
   socket.emit('grabCoin', { id: coinId, room });
 }
