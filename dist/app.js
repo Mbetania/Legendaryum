@@ -15,7 +15,7 @@ import { Redis } from 'ioredis';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import coinsInRoomRouter from './api/coins/readCoins';
+import coinControllersRouter from './api/coins/coinControllers';
 import usersRouter from './api/users/postController';
 import coinAmountUsersRouter from './api/users/getControllers';
 const __filename = fileURLToPath(import.meta.url);
@@ -29,7 +29,7 @@ const rawData = readFileSync(join(__dirname, '../src/roomConfig.json'), 'utf-8')
 const config = JSON.parse(rawData);
 app.use('/', usersRouter);
 app.use('/users', coinAmountUsersRouter);
-app.use('/rooms', coinsInRoomRouter);
+app.use('/rooms', coinControllersRouter);
 io.on('connection', (socket) => __awaiter(void 0, void 0, void 0, function* () {
     console.log(`A user Connected with id ${socket.id}`);
     // When a client joins a room, send them all the available coins in that room
@@ -38,7 +38,7 @@ io.on('connection', (socket) => __awaiter(void 0, void 0, void 0, function* () {
             const coinIds = yield redis.smembers(`coins:${room}`);
             const coins = [];
             for (let coinId of coinIds) {
-                const coin = yield getCoin(coinId);
+                const coin = yield getCoin(coinId, redis);
                 if (coin) {
                     coins.push(coin);
                 }

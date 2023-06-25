@@ -7,11 +7,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import express from 'express';
 import { getCoinsInRoom } from '../../models/coins';
 import { HTTP_STATUS } from '../../types/http';
-const router = express.Router();
-router.get('/:room', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+export const readCoins = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const coins = yield getCoinsInRoom(req.params.room);
         res.json(coins);
@@ -24,5 +22,4 @@ router.get('/:room', (req, res) => __awaiter(void 0, void 0, void 0, function* (
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'An unknown error occurred' });
         }
     }
-}));
-export default router;
+});

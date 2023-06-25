@@ -1,4 +1,3 @@
-//users.ts
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -11,28 +10,35 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import express from 'express';
 import { Redis } from 'ioredis';
 import { getCoin, getUserCoins } from '../../models/coins';
-import { HTTP_STATUS } from '../../types/http';
 const coinAmountUsersRouter = express.Router();
-const redis = new Redis();
-coinAmountUsersRouter.get('/:userId/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+coinAmountUsersRouter.get('/:userId/coins', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userId } = req.params;
+    if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
+    }
+    const redis = new Redis();
     try {
-        const { userId } = req.params;
         const coinIds = yield getUserCoins(userId, redis);
         const coins = [];
-        for (let coinId of coinIds) {
-            const coin = yield getCoin(coinId);
-            if (coin) {
-                coins.push(coin);
+        for (let id of coinIds) {
+            const coin = yield getCoin(id, redis);
+            if (!coin) {
+                console.error(`Coin with id ${id} does not exist`);
+                continue;
             }
-            else {
-                console.warn(`Coin with id ${coinId} does not exist`);
-            }
+            coins.push(coin);
+        }
+        if (coins.length === 0) {
+            return res.status(404).json({ error: 'No coins found for this user' });
         }
         res.json(coins);
     }
     catch (error) {
         console.error('Error fetching user coins:', error);
-        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error fetching user coins');
+        res.status(500).send('Error fetching user coins');
+    }
+    finally {
+        redis.disconnect();
     }
 }));
 export default coinAmountUsersRouter;

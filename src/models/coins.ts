@@ -1,12 +1,12 @@
 import { Coin } from '../types/coin';
 import { randomInRange } from '../utils/positionGeneration';
-import redisClient from '../utils/redis';
+import redisClient from './redis';
 import { v4 as uuidv4 } from 'uuid';
 import { Area } from '../types/room';
 import { Redis } from 'ioredis'; // Importar `Redis` en lugar de `RedisClient`
 
-export const getCoin = async (coinId: string): Promise<Coin> => {
-  const coin = await redisClient.get(`coin:${coinId}`);
+export const getCoin = async (coinId: string, client: Redis): Promise<Coin> => {
+  const coin = await client.get(`coin:${coinId}`);
 
   if (!coin) {
     throw new Error(`Coin with id ${coinId} does not exist`);
@@ -53,13 +53,14 @@ export const getCoinsInRoom = async (room: string): Promise<Coin[]> => {
 
   const coins = [];
   for (const coinId of coinIds) {
-    const coin = await getCoin(coinId);
+    const coin = await getCoin(coinId, redisClient);
     coins.push(coin);
   }
 
   console.log(`Retrieved ${coins.length} coins from room ${room}`);
   return coins;
 };
+
 
 
 export const getUserCoins = async (userId: string, client: Redis): Promise<string[]> => {

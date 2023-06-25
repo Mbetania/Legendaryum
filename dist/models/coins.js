@@ -8,10 +8,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { randomInRange } from '../utils/positionGeneration';
-import redisClient from '../utils/redis';
+import redisClient from './redis';
 import { v4 as uuidv4 } from 'uuid';
-export const getCoin = (coinId) => __awaiter(void 0, void 0, void 0, function* () {
-    const coin = yield redisClient.get(`coin:${coinId}`);
+export const getCoin = (coinId, client) => __awaiter(void 0, void 0, void 0, function* () {
+    const coin = yield client.get(`coin:${coinId}`);
     if (!coin) {
         throw new Error(`Coin with id ${coinId} does not exist`);
     }
@@ -51,7 +51,7 @@ export const getCoinsInRoom = (room) => __awaiter(void 0, void 0, void 0, functi
     }
     const coins = [];
     for (const coinId of coinIds) {
-        const coin = yield getCoin(coinId);
+        const coin = yield getCoin(coinId, redisClient);
         coins.push(coin);
     }
     console.log(`Retrieved ${coins.length} coins from room ${room}`);

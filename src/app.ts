@@ -8,7 +8,7 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { GlobalConfig, RoomConfig } from './types/room';
-import coinsInRoomRouter from './api/coins/readCoins'
+import  coinControllersRouter  from './api/coins/coinControllers';
 import usersRouter from './api/users/postController'
 import coinAmountUsersRouter from './api/users/getControllers';
 const __filename = fileURLToPath(import.meta.url);
@@ -24,8 +24,9 @@ const rawData = readFileSync(join(__dirname, '../src/roomConfig.json'), 'utf-8')
 const config: GlobalConfig = JSON.parse(rawData);
 
 app.use('/', usersRouter);
-app.use('/users', coinAmountUsersRouter)
-app.use('/rooms', coinsInRoomRouter)
+app.use('/users', coinAmountUsersRouter);
+app.use('/rooms', coinControllersRouter);
+
 io.on('connection', async(socket) => {
   console.log(`A user Connected with id ${socket.id}`);
 
@@ -35,7 +36,7 @@ io.on('connection', async(socket) => {
       const coinIds = await redis.smembers(`coins:${room}`);
       const coins: Coin[] = [];
       for (let coinId of coinIds) {
-        const coin = await getCoin(coinId);
+        const coin = await getCoin(coinId, redis);
         if (coin) {
           coins.push(coin);
         } else {

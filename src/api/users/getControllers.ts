@@ -1,5 +1,3 @@
-//users.ts
-
 import express from 'express';
 import { Redis } from 'ioredis';
 import { getCoin, getUserCoins } from '../../models/coins';
@@ -7,26 +5,38 @@ import { HTTP_STATUS } from '../../types/http';
 import { Coin } from '../../types/coin';
 
 const coinAmountUsersRouter = express.Router();
-const redis = new Redis();
 
-coinAmountUsersRouter.get('/:userId/', async (req, res) => {
+coinAmountUsersRouter.get('/:userId/coins', async (req, res, next) => {
+  const { userId } = req.params;
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' });
+  }
+
+  const redis = new Redis();
   try {
-    const { userId } = req.params;
     const coinIds = await getUserCoins(userId, redis);
     const coins: Coin[] = [];
-    for (let coinId of coinIds) {
-      const coin = await getCoin(coinId);
-      if (coin) {
-        coins.push(coin);
-      } else {
-        console.warn(`Coin with id ${coinId} does not exist`);
+    for (let id of coinIds) {
+      const coin = await getCoin(id, redis);
+      if (!coin) {
+        console.error(`Coin with id ${id} does not exist`);
+        continue;
       }
+      coins.push(coin);
     }
+
+    if (coins.length === 0) {
+      return res.status(404).json({ error: 'No coins found for this user' });
+    }
+
     res.json(coins);
   } catch (error) {
     console.error('Error fetching user coins:', error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error fetching user coins');
+    res.status(500).send('Error fetching user coins');
+  } finally {
+    redis.disconnect();
   }
 });
+
 
 export default coinAmountUsersRouter;
