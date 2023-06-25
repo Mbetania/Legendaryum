@@ -13,15 +13,15 @@ import { Redis } from 'ioredis';
 import { HTTP_STATUS } from '../../types/http';
 const routerPost = express.Router();
 const redis = new Redis();
-routerPost.post('/:userId/grab/:coinId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userId, coinId } = req.params;
+routerPost.post('/:userId/grab/:coinId/:room', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userId, coinId, room } = req.params;
     console.log(`Received POST request for user ${userId} and coin ${coinId}`);
     try {
         // Verifica si la moneda ya está asociada a un usuario
         const isAssociated = yield isCoinAssociatedToUser(userId, coinId, redis);
         if (!isAssociated) {
             // Asociar la moneda al usuario
-            yield associateCoinToUser(userId, coinId, redis);
+            yield associateCoinToUser(userId, coinId, room, redis);
             res.status(HTTP_STATUS.OK).send('Coin associated to user');
         }
         else {

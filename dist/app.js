@@ -8,7 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import express from 'express';
-import { associateCoinToUser, generateAndStoreCoins, isCoinAssociatedToUser, storeCoins } from './models/coins';
+import { associateCoinToUser, generateAndStoreCoins, getCoin, isCoinAssociatedToUser, storeCoins } from './models/coins';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { Redis } from 'ioredis';
@@ -35,8 +35,17 @@ io.on('connection', (socket) => __awaiter(void 0, void 0, void 0, function* () {
     // When a client joins a room, send them all the available coins in that room
     socket.on('join', (room) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const coinsString = yield redis.get(`coins:${room}`);
-            const coins = coinsString ? JSON.parse(coinsString) : [];
+            const coinIds = yield redis.smembers(`coins:${room}`);
+            const coins = [];
+            for (let coinId of coinIds) {
+                const coin = yield getCoin(coinId);
+                if (coin) {
+                    coins.push(coin);
+                }
+                else {
+                    console.warn(`Coin with id ${coinId} does not exist`);
+                }
+            }
             socket.emit('coins', coins);
         }
         catch (error) {
@@ -51,7 +60,7 @@ io.on('connection', (socket) => __awaiter(void 0, void 0, void 0, function* () {
             const isAssociated = yield isCoinAssociatedToUser(userId, id, redis);
             if (!isAssociated) {
                 // Asociar la moneda al usuario
-                yield associateCoinToUser(userId, id, redis);
+                yield associateCoinToUser(userId, id, room, redis);
                 const coinsString = yield redis.get(`coins:${room}`);
                 const coins = coinsString ? JSON.parse(coinsString) : [];
                 const remainingCoins = coins.filter((coin) => coin.id !== id);

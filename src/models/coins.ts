@@ -6,7 +6,7 @@ import { Area } from '../types/room';
 import { Redis } from 'ioredis'; // Importar `Redis` en lugar de `RedisClient`
 
 export const getCoin = async (coinId: string): Promise<Coin> => {
-  const coin = await redisClient.get(coinId);
+  const coin = await redisClient.get(`coin:${coinId}`);
 
   if (!coin) {
     throw new Error(`Coin with id ${coinId} does not exist`);
@@ -35,33 +35,45 @@ export const generateAndStoreCoins = async (room: string, coinsAmount: number, a
 
 //almacena coins en redis
 export const storeCoins = async(room: string, coins: Coin[]): Promise<void> => {
-  const key = `coins:${room}`;
-  const value = JSON.stringify(coins);
-  await redisClient.set(key, value, 'EX', 60 * 60); // TTL de 1 hora
+  for (const coin of coins) {
+    const key = `coin:${coin.id}`;
+    const value = JSON.stringify(coin);
+    await redisClient.set(key, value, 'EX', 60 * 60); // TTL de 1 hora
+    await redisClient.sadd(`coins:${room}`, coin.id); // Add coinId to room's coin set
+  }
 }
 
 export const getCoinsInRoom = async (room: string): Promise<Coin[]> => {
   const key = `coins:${room}`;
-  const coinsString = await redisClient.get(key);
+  const coinIds = await redisClient.smembers(key);
 
-  if (!coinsString) {
+  if (!coinIds.length) {
     throw new Error(`No coins found in room ${room}`);
   }
 
-  const coins = JSON.parse(coinsString);
+  const coins = [];
+  for (const coinId of coinIds) {
+    const coin = await getCoin(coinId);
+    coins.push(coin);
+  }
+
   console.log(`Retrieved ${coins.length} coins from room ${room}`);
   return coins;
 };
 
+
 export const getUserCoins = async (userId: string, client: Redis): Promise<string[]> => {
-  return client.smembers(`user:${userId}:coins`);
+  const coinIds = await client.smembers(`user:${userId}:coins`);
+  return coinIds;
 };
+
 
 export const isCoinAssociatedToUser = async (userId: string, coinId: string, client: Redis): Promise<boolean> => {
   const isMember = await client.sismember(`user:${userId}:coins`, coinId);
   return isMember === 1;
 };
 
-export const associateCoinToUser = async (userId: string, coinId: string, client: Redis): Promise<void> => {
+export const associateCoinToUser = async (userId: string, coinId: string, room: string, client: Redis): Promise<void> => {
+  await client.srem(`room:${room}:coins`, coinId);
   await client.sadd(`user:${userId}:coins`, coinId);
 };

@@ -14,14 +14,14 @@ import { getCoin, getUserCoins } from '../../models/coins';
 import { HTTP_STATUS } from '../../types/http';
 const coinAmountUsersRouter = express.Router();
 const redis = new Redis();
-coinAmountUsersRouter.get('/:userId/coins', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+coinAmountUsersRouter.get('/:userId/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { userId } = req.params;
-        const coinIds = yield getUserCoins(userId, redis); // Aquí se pasa el cliente Redis
+        const coinIds = yield getUserCoins(userId, redis);
         const coins = [];
         for (let coinId of coinIds) {
             const coin = yield getCoin(coinId);
-            if (coin) { // Add this check
+            if (coin) {
                 coins.push(coin);
             }
             else {

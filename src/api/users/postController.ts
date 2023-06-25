@@ -6,8 +6,8 @@ import { HTTP_METHODS, HTTP_STATUS } from '../../types/http';
 const routerPost = express.Router();
 const redis = new Redis();
 
-routerPost.post('/:userId/grab/:coinId', async (req, res) => {
-  const { userId, coinId } = req.params;
+routerPost.post('/:userId/grab/:coinId/:room', async (req, res) => {
+  const { userId, coinId, room } = req.params;
 
   console.log(`Received POST request for user ${userId} and coin ${coinId}`);
 
@@ -16,7 +16,7 @@ routerPost.post('/:userId/grab/:coinId', async (req, res) => {
     const isAssociated = await isCoinAssociatedToUser(userId, coinId, redis);
     if (!isAssociated) {
       // Asociar la moneda al usuario
-      await associateCoinToUser(userId, coinId, redis);
+      await associateCoinToUser(userId, coinId, room, redis);
       res.status(HTTP_STATUS.OK).send('Coin associated to user');
     } else {
       res.status(HTTP_STATUS.BAD_REQUEST).send('Coin already associated to a user');

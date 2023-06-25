@@ -12,11 +12,11 @@ const redis = new Redis();
 coinAmountUsersRouter.get('/:userId/', async (req, res) => {
   try {
     const { userId } = req.params;
-    const coinIds = await getUserCoins(userId, redis);  // Aquí se pasa el cliente Redis
+    const coinIds = await getUserCoins(userId, redis);
     const coins: Coin[] = [];
     for (let coinId of coinIds) {
       const coin = await getCoin(coinId);
-      if (coin) {  // Add this check
+      if (coin) {
         coins.push(coin);
       } else {
         console.warn(`Coin with id ${coinId} does not exist`);
@@ -28,4 +28,5 @@ coinAmountUsersRouter.get('/:userId/', async (req, res) => {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error fetching user coins');
   }
 });
+
 export default coinAmountUsersRouter;

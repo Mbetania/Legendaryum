@@ -1,5 +1,5 @@
 import express from 'express';
-import { associateCoinToUser, generateAndStoreCoins, isCoinAssociatedToUser, storeCoins } from './models/coins';
+import { associateCoinToUser, generateAndStoreCoins, getCoin, isCoinAssociatedToUser, storeCoins } from './models/coins';
 import {createServer} from 'http';
 import { Server } from 'socket.io';
 import { Redis } from 'ioredis';
@@ -32,8 +32,16 @@ io.on('connection', async(socket) => {
   // When a client joins a room, send them all the available coins in that room
   socket.on('join', async(room) => {
     try {
-      const coinsString = await redis.get(`coins:${room}`);
-      const coins: Coin[] = coinsString ? JSON.parse(coinsString) : [];
+      const coinIds = await redis.smembers(`coins:${room}`);
+      const coins: Coin[] = [];
+      for (let coinId of coinIds) {
+        const coin = await getCoin(coinId);
+        if (coin) {
+          coins.push(coin);
+        } else {
+          console.warn(`Coin with id ${coinId} does not exist`);
+        }
+      }
       socket.emit('coins', coins);
     } catch (error) {
       console.error('Error fetching coins:', error);
@@ -48,7 +56,7 @@ io.on('connection', async(socket) => {
       const isAssociated = await isCoinAssociatedToUser(userId, id, redis);
       if (!isAssociated) {
         // Asociar la moneda al usuario
-        await associateCoinToUser(userId, id, redis);
+        await associateCoinToUser(userId, id, room, redis);
         const coinsString = await redis.get(`coins:${room}`);
         const coins: Coin[] = coinsString ? JSON.parse(coinsString) : [];
         const remainingCoins = coins.filter((coin: Coin) => coin.id !== id);
