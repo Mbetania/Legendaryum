@@ -4,33 +4,46 @@ import {createServer} from 'http';
 import { Server } from 'socket.io';
 import { Redis } from 'ioredis';
 import { Coin } from './types/coin';
-import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import { GlobalConfig, RoomConfig } from './types/room';
 import  coinControllersRouter  from './api/coins/coinControllers';
 import usersRouter from './api/users/postController'
 import coinAmountUsersRouter from './api/users/getControllers';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import config from './utils/readJSONConfig';
+
 
 const app = express();
 const port = 3000;
 const redis = new Redis();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
-const rawData = readFileSync(join(__dirname, '../src/roomConfig.json'), 'utf-8');
 
-const config: GlobalConfig = JSON.parse(rawData);
 
 app.use('/', usersRouter);
 app.use('/users', coinAmountUsersRouter);
 app.use('/rooms', coinControllersRouter);
 
+
+const connectedClients: string[] = [];
+let roomIndex = 0;
 io.on('connection', async(socket) => {
   console.log(`A user Connected with id ${socket.id}`);
+  connectedClients.push(socket.id);
 
-  // When a client joins a room, send them all the available coins in that room
+  if (connectedClients.length === 4) {
+    if (roomIndex >= Object.keys(config).length) {
+      console.log('No more room configuration available');
+      return;
+    }
+    const room = Object.keys(config)[roomIndex];
+    const { coinsAmount, area } = config[room];
+    await generateAndStoreCoins(room, coinsAmount, area);
+    for (let i = 0; i < 4; i++) {
+      io.to(connectedClients[i]).emit('roomAvailable', { room, coins: coinsAmount });
+    }
+    connectedClients.splice(0, 4);
+    roomIndex++;
+  }
+
   socket.on('join', async(room) => {
     try {
       const coinIds = await redis.smembers(`coins:${room}`);
@@ -70,17 +83,15 @@ io.on('connection', async(socket) => {
   });
   socket.on('disconnect', () => {
     console.log(`User ${socket.id} disconnected`);
+    const index = connectedClients.indexOf(socket.id);
+    if (index !== -1) {
+      connectedClients.splice(index, 1);
+    }
   });
 });
 
 // Function to initialize the server
 async function init() {
-  for (const room in config) {
-    const pickedRoom: RoomConfig = config[room];
-    const { coinsAmount, area} = pickedRoom;
-    await generateAndStoreCoins(room, coinsAmount, area);
-  }
-
   httpServer.listen(port, () => {
     console.log(`Server running on port: ${port}`);
   });
