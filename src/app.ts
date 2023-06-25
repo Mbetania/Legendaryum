@@ -22,14 +22,15 @@ app.use('/', usersRouter);
 app.use('/users', coinAmountUsersRouter);
 app.use('/rooms', coinControllersRouter);
 
-
-const connectedClients: string[] = [];
+const connectedClients: { [socketId: string]: string } = {};
 let roomIndex = 0;
 io.on('connection', async(socket) => {
   console.log(`A user Connected with id ${socket.id}`);
-  connectedClients.push(socket.id);
+  connectedClients[socket.id] = "";
 
-  if (connectedClients.length === 4) {
+  const clientsKeys = Object.keys(connectedClients);
+
+  if (clientsKeys.length === 4) {
     if (roomIndex >= Object.keys(config).length) {
       console.log('No more room configuration available');
       return;
@@ -38,13 +39,18 @@ io.on('connection', async(socket) => {
     const { coinsAmount, area } = config[room];
     await generateAndStoreCoins(room, coinsAmount, area);
     for (let i = 0; i < 4; i++) {
-      io.to(connectedClients[i]).emit('roomAvailable', { room, coins: coinsAmount });
+      connectedClients[clientsKeys[i]] = room;
+      io.to(clientsKeys[i]).emit('roomAvailable', { room, coins: coinsAmount });
     }
-    connectedClients.splice(0, 4);
+    clientsKeys.splice(0, 4);
     roomIndex++;
   }
 
   socket.on('join', async(room) => {
+    if (connectedClients[socket.id] !== room) {
+      console.error(`Client ${socket.id} tried to join room ${room} but was assigned to room ${connectedClients[socket.id]}`);
+      return;
+    }
     try {
       const coinIds = await redis.smembers(`coins:${room}`);
       const coins: Coin[] = [];
@@ -83,10 +89,7 @@ io.on('connection', async(socket) => {
   });
   socket.on('disconnect', () => {
     console.log(`User ${socket.id} disconnected`);
-    const index = connectedClients.indexOf(socket.id);
-    if (index !== -1) {
-      connectedClients.splice(index, 1);
-    }
+    delete connectedClients[socket.id];
   });
 });
 

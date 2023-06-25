@@ -24,12 +24,13 @@ const io = new Server(httpServer);
 app.use('/', usersRouter);
 app.use('/users', coinAmountUsersRouter);
 app.use('/rooms', coinControllersRouter);
-const connectedClients = [];
+const connectedClients = {};
 let roomIndex = 0;
 io.on('connection', (socket) => __awaiter(void 0, void 0, void 0, function* () {
     console.log(`A user Connected with id ${socket.id}`);
-    connectedClients.push(socket.id);
-    if (connectedClients.length === 4) {
+    connectedClients[socket.id] = "";
+    const clientsKeys = Object.keys(connectedClients);
+    if (clientsKeys.length === 4) {
         if (roomIndex >= Object.keys(config).length) {
             console.log('No more room configuration available');
             return;
@@ -38,12 +39,17 @@ io.on('connection', (socket) => __awaiter(void 0, void 0, void 0, function* () {
         const { coinsAmount, area } = config[room];
         yield generateAndStoreCoins(room, coinsAmount, area);
         for (let i = 0; i < 4; i++) {
-            io.to(connectedClients[i]).emit('roomAvailable', { room, coins: coinsAmount });
+            connectedClients[clientsKeys[i]] = room;
+            io.to(clientsKeys[i]).emit('roomAvailable', { room, coins: coinsAmount });
         }
-        connectedClients.splice(0, 4);
+        clientsKeys.splice(0, 4);
         roomIndex++;
     }
     socket.on('join', (room) => __awaiter(void 0, void 0, void 0, function* () {
+        if (connectedClients[socket.id] !== room) {
+            console.error(`Client ${socket.id} tried to join room ${room} but was assigned to room ${connectedClients[socket.id]}`);
+            return;
+        }
         try {
             const coinIds = yield redis.smembers(`coins:${room}`);
             const coins = [];
@@ -84,10 +90,7 @@ io.on('connection', (socket) => __awaiter(void 0, void 0, void 0, function* () {
     }));
     socket.on('disconnect', () => {
         console.log(`User ${socket.id} disconnected`);
-        const index = connectedClients.indexOf(socket.id);
-        if (index !== -1) {
-            connectedClients.splice(index, 1);
-        }
+        delete connectedClients[socket.id];
     });
 }));
 // Function to initialize the server
