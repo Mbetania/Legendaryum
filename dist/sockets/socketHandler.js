@@ -18,7 +18,7 @@ export const socketHandler = (io) => {
         socket.on('join', (room) => __awaiter(void 0, void 0, void 0, function* () {
             console.log(`User ${socket.id} joined room ${room}`);
             socket.join(room);
-            const roomConfig = config[room];
+            const Room= config[room];
             if (!roomConfig) {
                 console.error(`No configuration found for room ${room}`);
                 return;

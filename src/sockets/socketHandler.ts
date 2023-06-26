@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { generateAndStoreCoins, getCoinsInRoom, associateCoinToUser } from '../models/coins';
 import { Redis } from 'ioredis';
-import { RoomConfig } from '../types/room';
+import { Room} from '../types/room';
 import config from '../utils/readJSONConfig';
 
 
@@ -15,7 +15,7 @@ export const socketHandler = (io: Server) => {
       console.log(`User ${socket.id} joined room ${room}`);
       socket.join(room);
 
-      const roomConfig: RoomConfig = config[room];
+      const roomConfig: Room= config[room];
       if (!roomConfig) {
         console.error(`No configuration found for room ${room}`);
         return

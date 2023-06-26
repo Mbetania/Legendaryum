@@ -1,14 +1,17 @@
 import express from 'express';
 import { associateCoinToUser, generateAndStoreCoins, getCoin, isCoinAssociatedToUser, storeCoins } from './models/coins';
 import {createServer} from 'http';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { Redis } from 'ioredis';
 import { Coin } from './types/coin';
-import { GlobalConfig, RoomConfig } from './types/room';
+import  { Room }   from './types/room';
 import  coinControllersRouter  from './api/coins/coinControllers';
 import usersRouter from './api/users/postController'
 import coinAmountUsersRouter from './api/users/getControllers';
 import config from './utils/readJSONConfig';
+import { Client, User } from './types/users';
+import { v4 as uuidv4 } from 'uuid';
+import { removeClient } from './services/clientService';
 
 
 const app = express();
@@ -22,73 +25,70 @@ app.use('/', usersRouter);
 app.use('/users', coinAmountUsersRouter);
 app.use('/rooms', coinControllersRouter);
 
-const connectedClients: { [socketId: string]: string } = {};
-let roomIndex = 0;
-io.on('connection', async(socket) => {
-  console.log(`A user Connected with id ${socket.id}`);
-  connectedClients[socket.id] = "";
+let users: User[] = [];
+let rooms: { [key: string]: User[] } = {};
+let connectedClients : { [key: string]: Client } = {};
+const roomCapacity: number = (config.room as Room).capacity;
 
-  const clientsKeys = Object.keys(connectedClients);
+io.on("connection", (socket: Socket) => {
+  socket.on("join server", (username: string) => {
+    const user: User = {
+      username,
+      id: socket.id,
+    };
+    users.push(user);
 
-  if (clientsKeys.length === 4) {
-    if (roomIndex >= Object.keys(config).length) {
-      console.log('No more room configuration available');
-      return;
-    }
-    const room = Object.keys(config)[roomIndex];
-    const { coinsAmount, area } = config[room];
-    await generateAndStoreCoins(room, coinsAmount, area);
-    for (let i = 0; i < 4; i++) {
-      connectedClients[clientsKeys[i]] = room;
-      io.to(clientsKeys[i]).emit('roomAvailable', { room, coins: coinsAmount });
-    }
-    clientsKeys.splice(0, 4);
-    roomIndex++;
-  }
+    let roomName: string;
+    const lastRoom: string = Object.keys(rooms).slice(-1)[0];
 
-  socket.on('join', async(room) => {
-    if (connectedClients[socket.id] !== room) {
-      console.error(`Client ${socket.id} tried to join room ${room} but was assigned to room ${connectedClients[socket.id]}`);
-      return;
+    if (lastRoom && rooms[lastRoom].length < roomCapacity) {
+      roomName = lastRoom;
+    } else {
+      roomName = `room-${uuidv4()}`;
+      rooms[roomName] = [];
     }
-    try {
-      const coinIds = await redis.smembers(`coins:${room}`);
-      const coins: Coin[] = [];
-      for (let coinId of coinIds) {
-        const coin = await getCoin(coinId, redis);
-        if (coin) {
-          coins.push(coin);
-        } else {
-          console.warn(`Coin with id ${coinId} does not exist`);
-        }
-      }
-      socket.emit('coins', coins);
-    } catch (error) {
-      console.error('Error fetching coins:', error);
+
+    rooms[roomName].push(user);
+    socket.join(roomName);
+
+    if (rooms[roomName].length === roomCapacity) {
+      const { coinsAmount, scale } = config.room;
+      generateAndStoreCoins(roomName, coinsAmount, scale).then((coinIds) => {
+        io.to(roomName).emit("coins available", coinIds);
+      });
     }
+
+    io.emit("new user", user.username);
   });
+
 
   // When a client grabs a coin, remove it from Redis and notify all clients in the room
-  socket.on('grabCoin', async(data) => {
-    const { id, room, userId } = data;
+  socket.on("grab coin", async (coinId, roomId) => {
     try {
+      const userId = socket.id;
       // Verifica si la moneda ya está asociada a un usuario
-      const isAssociated = await isCoinAssociatedToUser(userId, id, redis);
+      const isAssociated = await isCoinAssociatedToUser(userId, coinId, redis);
       if (!isAssociated) {
         // Asociar la moneda al usuario
-        await associateCoinToUser(userId, id, room, redis);
-        const coinsString = await redis.get(`coins:${room}`);
+        await associateCoinToUser(userId, coinId, roomId, redis);
+
+        const coinsString = await redis.get(`coins:${roomId}`);
         const coins: Coin[] = coinsString ? JSON.parse(coinsString) : [];
-        const remainingCoins = coins.filter((coin: Coin) => coin.id !== id);
-        await storeCoins(room, remainingCoins);
-        io.to(room).emit('coinUnavailable', id);
+        const remainingCoins = coins.filter((coin: Coin) => coin.id !== coinId);
+
+        await storeCoins(roomId, remainingCoins);
+
+        // Aquí necesitarías implementar una función para asociar una moneda a un usuario en tu base de datos.
+        io.to(roomId).emit("coin grabbed", { coinId, userId });
       }
     } catch (error) {
-      console.error('Error grabbing coin:', error);
+      console.error("Error grabbing coin:", error);
     }
   });
-  socket.on('disconnect', () => {
+
+  socket.on('disconnect', async () => {
     console.log(`User ${socket.id} disconnected`);
+    await removeClient(connectedClients[socket.id])
     delete connectedClients[socket.id];
   });
 });

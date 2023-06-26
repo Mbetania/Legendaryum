@@ -1,25 +1,17 @@
-import { Coin } from "./coin";
+export interface Scale {
+  x: number;
+  y: number;
+  z: number;
+}
 
-export type Room = {
+export interface Room{
   id: string;
-  coins: Coin[]
-}
-
-
-export interface Area {
-  xmin: number;
-  xmax: number;
-  ymin: number;
-  ymax: number;
-  zmin: number;
-  zmax: number;
-}
-
-export interface GlobalConfig {
-  [room: string]: RoomConfig
-}
-
-export interface RoomConfig {
   coinsAmount: number;
-  area: Area
+  scale: Scale;
+  ttl: number;
+  capacity: number;
+}
+
+export interface GameConfig {
+  room: Room;
 }
