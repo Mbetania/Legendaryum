@@ -1,99 +1,55 @@
-import express from 'express';
-import { associateCoinToUser, generateAndStoreCoins, getCoin, isCoinAssociatedToUser, storeCoins } from './models/coins';
+import express from "express";
 import {createServer} from 'http';
 import { Server, Socket } from 'socket.io';
-import { Redis } from 'ioredis';
-import { Coin } from './types/coin';
-import  { Room }   from './types/room';
 import  coinControllersRouter  from './api/coins/coinControllers';
-import usersRouter from './api/users/postController'
+import usersRouter from './router/usersRouter'
 import coinAmountUsersRouter from './api/users/getControllers';
-import config from './utils/readJSONConfig';
-import { Client, User } from './types/users';
-import { v4 as uuidv4 } from 'uuid';
-import { removeClient } from './services/clientService';
+import { authenticateClientById, getClientById } from './services/clientService';
+
 
 
 const app = express();
 const port = 3000;
-const redis = new Redis();
+
+app.use(express.json());
+
 const httpServer = createServer(app);
 const io = new Server(httpServer);
 
-
-app.use('/', usersRouter);
-app.use('/users', coinAmountUsersRouter);
+app.use('/users', usersRouter);
+// app.use('/', usersRouter);
 app.use('/rooms', coinControllersRouter);
 
-let users: User[] = [];
-let rooms: { [key: string]: User[] } = {};
-let connectedClients : { [key: string]: Client } = {};
-const roomCapacity: number = (config.room as Room).capacity;
-
 io.on("connection", (socket: Socket) => {
-  socket.on("join server", (username: string) => {
-    const user: User = {
-      username,
-      id: socket.id,
-    };
-    users.push(user);
+  socket.on("authenticate", async (data: {userId: string, username: string}) => {
+    const client = await authenticateClientById(data.userId, data.username);
 
-    let roomName: string;
-    const lastRoom: string = Object.keys(rooms).slice(-1)[0];
-
-    if (lastRoom && rooms[lastRoom].length < roomCapacity) {
-      roomName = lastRoom;
-    } else {
-      roomName = `room-${uuidv4()}`;
-      rooms[roomName] = [];
-    }
-
-    rooms[roomName].push(user);
-    socket.join(roomName);
-
-    if (rooms[roomName].length === roomCapacity) {
-      const { coinsAmount, scale } = config.room;
-      generateAndStoreCoins(roomName, coinsAmount, scale).then((coinIds) => {
-        io.to(roomName).emit("coins available", coinIds);
-      });
-    }
-
-    io.emit("new user", user.username);
+    // Emitir el token al cliente
+    socket.emit("authenticated", { token: client.token });
   });
 
+  socket.on('get client data', async (userId: string) =>{
+    const clientData = await getClientById(userId);
+    socket.emit('client data', clientData)
+  })
+  socket.on("join room", (roomId: string) => {
+    // Implementa la lógica de unión a la sala
+  });
 
-  // When a client grabs a coin, remove it from Redis and notify all clients in the room
   socket.on("grab coin", async (coinId, roomId) => {
-    try {
-      const userId = socket.id;
-      // Verifica si la moneda ya está asociada a un usuario
-      const isAssociated = await isCoinAssociatedToUser(userId, coinId, redis);
-      if (!isAssociated) {
-        // Asociar la moneda al usuario
-        await associateCoinToUser(userId, coinId, roomId, redis);
+    // Implementa la lógica de agarrar la moneda
+  });
 
-        const coinsString = await redis.get(`coins:${roomId}`);
-        const coins: Coin[] = coinsString ? JSON.parse(coinsString) : [];
-        const remainingCoins = coins.filter((coin: Coin) => coin.id !== coinId);
-
-        await storeCoins(roomId, remainingCoins);
-
-        // Aquí necesitarías implementar una función para asociar una moneda a un usuario en tu base de datos.
-        io.to(roomId).emit("coin grabbed", { coinId, userId });
-      }
-    } catch (error) {
-      console.error("Error grabbing coin:", error);
-    }
+  socket.on("check status", () => {
+    // Implementa la lógica de consulta de estado
   });
 
   socket.on('disconnect', async () => {
     console.log(`User ${socket.id} disconnected`);
-    await removeClient(connectedClients[socket.id])
-    delete connectedClients[socket.id];
+    // ...
   });
 });
 
-// Function to initialize the server
 async function init() {
   httpServer.listen(port, () => {
     console.log(`Server running on port: ${port}`);

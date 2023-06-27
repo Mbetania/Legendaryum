@@ -9,7 +9,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { getCoinsInRoom, associateCoinToUser } from '../models/coins';
 import { Redis } from 'ioredis';
-import config from '../utils/readJSONConfig';
 export const socketHandler = (io) => {
     const redis = new Redis();
     io.on('connection', (socket) => {
@@ -18,11 +17,11 @@ export const socketHandler = (io) => {
         socket.on('join', (room) => __awaiter(void 0, void 0, void 0, function* () {
             console.log(`User ${socket.id} joined room ${room}`);
             socket.join(room);
-            const Room= config[room];
-            if (!roomConfig) {
-                console.error(`No configuration found for room ${room}`);
-                return;
-            }
+            // const roomConfig: Room= onfig[room];
+            // if (!roomConfig) {
+            //   console.error(`No configuration found for room ${room}`);
+            //   return
+            // }
             // Retrieve the coins for this room and emit them to the client
             const coins = yield getCoinsInRoom(room);
             socket.emit('coins', coins);

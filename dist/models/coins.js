@@ -7,9 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { randomInRange } from '../utils/positionGeneration';
 import redisClient from './redis';
-import { v4 as uuidv4 } from 'uuid';
 export const getCoin = (coinId, client) => __awaiter(void 0, void 0, void 0, function* () {
     const coin = yield client.get(`coin:${coinId}`);
     if (!coin) {
@@ -17,23 +15,23 @@ export const getCoin = (coinId, client) => __awaiter(void 0, void 0, void 0, fun
     }
     return JSON.parse(coin);
 });
-//generar coins
-export const generateAndStoreCoins = (room, coinsAmount, area) => __awaiter(void 0, void 0, void 0, function* () {
-    const coins = [];
-    for (let i = 0; i < coinsAmount; i++) {
-        const coin = {
-            id: uuidv4(),
-            position: {
-                x: randomInRange(area.xmin, area.xmax),
-                y: randomInRange(area.ymin, area.ymax),
-                z: randomInRange(area.zmin, area.zmax),
-            },
-            ttl: 60 * 60,
-        };
-        coins.push(coin);
-    }
-    yield storeCoins(room, coins);
-});
+// //generar coins
+// export const generateAndStoreCoins = async (room: string, coinsAmount: number, area: Area): Promise<void> => {
+//   const coins: Coin[] = [];
+//   for (let i = 0; i < coinsAmount; i++) {
+//     const coin: Coin = {
+//       id: uuidv4(),
+//       position: {
+//         x: randomInRange(area.xmin, area.xmax),
+//         y: randomInRange(area.ymin, area.ymax),
+//         z: randomInRange(area.zmin, area.zmax),
+//       },
+//       ttl: 60 * 60,
+//     };
+//     coins.push(coin);
+//   }
+//   await storeCoins(room, coins);
+// }
 //almacena coins en redis
 export const storeCoins = (room, coins) => __awaiter(void 0, void 0, void 0, function* () {
     for (const coin of coins) {

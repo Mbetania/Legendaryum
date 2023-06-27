@@ -1,11 +1,15 @@
 import express from "express";
 import { Redis } from "ioredis";
 import { Room} from "./room";
+import { Coin } from "./coin";
 
 export interface Client {
-  socket: string;
+  id: string;
   room?: Room;
   status: ClientStatus;
+  username: string;
+  token: string;
+  coins?: Coin[];
 }
 
 export enum ClientStatus {

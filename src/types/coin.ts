@@ -1,11 +1,12 @@
 export type Coin = {
   id: string;
-  position: vectorPosition;
-  ttl: number;
+  position: Vector3;
+  ttl: number; // expiration time
+  isCollected: boolean;
 };
 
-export type vectorPosition = {
+export type Vector3 = {
   x: number;
   y: number;
   z: number;
-}
+};

@@ -2,7 +2,6 @@ import { Coin } from '../types/coin';
 import { randomInRange } from '../utils/positionGeneration';
 import redisClient from './redis';
 import { v4 as uuidv4 } from 'uuid';
-import { Area } from '../types/room';
 import { Redis } from 'ioredis'; // Importar `Redis` en lugar de `RedisClient`
 
 export const getCoin = async (coinId: string, client: Redis): Promise<Coin> => {
@@ -15,23 +14,23 @@ export const getCoin = async (coinId: string, client: Redis): Promise<Coin> => {
   return JSON.parse(coin);
 };
 
-//generar coins
-export const generateAndStoreCoins = async (room: string, coinsAmount: number, area: Area): Promise<void> => {
-  const coins: Coin[] = [];
-  for (let i = 0; i < coinsAmount; i++) {
-    const coin: Coin = {
-      id: uuidv4(),
-      position: {
-        x: randomInRange(area.xmin, area.xmax),
-        y: randomInRange(area.ymin, area.ymax),
-        z: randomInRange(area.zmin, area.zmax),
-      },
-      ttl: 60 * 60,
-    };
-    coins.push(coin);
-  }
-  await storeCoins(room, coins);
-}
+// //generar coins
+// export const generateAndStoreCoins = async (room: string, coinsAmount: number, area: Area): Promise<void> => {
+//   const coins: Coin[] = [];
+//   for (let i = 0; i < coinsAmount; i++) {
+//     const coin: Coin = {
+//       id: uuidv4(),
+//       position: {
+//         x: randomInRange(area.xmin, area.xmax),
+//         y: randomInRange(area.ymin, area.ymax),
+//         z: randomInRange(area.zmin, area.zmax),
+//       },
+//       ttl: 60 * 60,
+//     };
+//     coins.push(coin);
+//   }
+//   await storeCoins(room, coins);
+// }
 
 //almacena coins en redis
 export const storeCoins = async(room: string, coins: Coin[]): Promise<void> => {
