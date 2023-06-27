@@ -8,13 +8,28 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import express from "express";
-import { authenticateClientById, getClientById } from "../services/clientService";
+import { authenticateClientById, getClientById, getClientByUsername } from "../services/clientService";
 import { HTTP_STATUS } from "../types/http";
 const usersRouter = express.Router();
 usersRouter.get('/:userId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;
     try {
         const client = yield getClientById(userId);
+        if (client) {
+            res.json(client);
+        }
+        else {
+            res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'User not find' });
+        }
+    }
+    catch (err) {
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: 'Error getting user data.' });
+    }
+}));
+usersRouter.get('/username/:username', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { username } = req.params;
+    try {
+        const client = yield getClientByUsername(username);
         if (client) {
             res.json(client);
         }

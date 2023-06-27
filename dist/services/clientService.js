@@ -11,13 +11,20 @@ import redisClient from "../models/redis";
 import { ClientStatus } from "../types/users";
 import { generateToken } from "./authService";
 export const createClient = (client) => __awaiter(void 0, void 0, void 0, function* () {
-    yield redisClient.set(`user:${client.username}`, JSON.stringify(client));
+    const clientData = JSON.stringify(client);
+    yield redisClient.set(`user:${client.username}`, clientData);
+    yield redisClient.set(`user:${client.id}`, clientData);
 });
 export const removeClient = (client) => __awaiter(void 0, void 0, void 0, function* () {
     yield redisClient.del(`user:${client.username}`);
+    yield redisClient.del(`user:${client.id}`);
 });
 export const getClientById = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const clientData = yield redisClient.get(`user:${userId}`);
+    return clientData ? JSON.parse(clientData) : null;
+});
+export const getClientByUsername = (username) => __awaiter(void 0, void 0, void 0, function* () {
+    const clientData = yield redisClient.get(`user:${username}`);
     return clientData ? JSON.parse(clientData) : null;
 });
 export const authenticateClientById = (username, userId) => __awaiter(void 0, void 0, void 0, function* () {

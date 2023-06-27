@@ -1,5 +1,5 @@
 import  express  from "express";
-import { authenticateClientById, getClientById } from "../services/clientService";
+import { authenticateClientById, getClientById, getClientByUsername } from "../services/clientService";
 import { HTTP_STATUS } from "../types/http";
 
 const usersRouter = express.Router();
@@ -18,6 +18,22 @@ usersRouter.get('/:userId', async (req, res) =>{
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: 'Error getting user data.'})
   }
 })
+
+usersRouter.get('/username/:username', async (req, res) =>{
+  const {username} = req.params
+
+  try {
+    const client = await getClientByUsername(username);
+    if (client) {
+      res.json(client);
+    } else {
+      res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'User not find'});
+    }
+  } catch (err) {
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: 'Error getting user data.'})
+  }
+})
+
 
 usersRouter.post('/authenticate', async (req, res) => {
   const { username, userId } = req.body;
