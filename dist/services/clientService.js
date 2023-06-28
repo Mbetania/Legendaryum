@@ -13,11 +13,9 @@ import { generateToken } from "./authService";
 import { v4 as uuidv4 } from 'uuid';
 export const createClient = (client) => __awaiter(void 0, void 0, void 0, function* () {
     const clientData = JSON.stringify(client);
-    yield redisClient.set(`user:${client.username}`, clientData);
     yield redisClient.set(`user:${client.id}`, clientData);
 });
 export const removeClient = (client) => __awaiter(void 0, void 0, void 0, function* () {
-    yield redisClient.del(`user:${client.username}`);
     yield redisClient.del(`user:${client.id}`);
 });
 export const getClientById = (userId) => __awaiter(void 0, void 0, void 0, function* () {

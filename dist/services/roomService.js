@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import redisClient from "./redis";
 import { v4 as uuidv4 } from 'uuid';
+import { getClientById } from "./clientService";
 // Crea una sala al inicio del servidor
 export const createRoom = (room) => __awaiter(void 0, void 0, void 0, function* () {
     room.id = uuidv4();
@@ -29,12 +30,14 @@ export const getRoomById = (roomId) => __awaiter(void 0, void 0, void 0, functio
         return null;
     }
     let room = JSON.parse(roomData);
-    // If clients data is not included in the serialization, we get it manually
+    // We get the full client data using the stored client IDs
     if (room.clients) {
         const clients = [];
         for (let clientId of room.clients) {
-            const clientData = yield redisClient.get(`user:${clientId}`);
-            clients.push(clientData ? JSON.parse(clientData) : null);
+            const clientData = yield getClientById(clientId);
+            if (clientData) {
+                clients.push(clientData);
+            }
         }
         room.clients = clients;
     }
@@ -44,13 +47,12 @@ export const getRoomById = (roomId) => __awaiter(void 0, void 0, void 0, functio
 export const joinRoom = (roomId, clientId) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const roomData = yield redisClient.get(`room:${roomId}`);
-    const clientData = yield redisClient.get(`user:${clientId}`);
-    if (!roomData || !clientData) {
+    if (!roomData) {
         return null;
     }
     const room = JSON.parse(roomData);
-    const client = JSON.parse(clientData);
-    (_a = room.clients) === null || _a === void 0 ? void 0 : _a.push(client);
+    // Instead of storing the full client object, we just store the client ID
+    (_a = room.clients) === null || _a === void 0 ? void 0 : _a.push(clientId);
     yield redisClient.set(`room:${roomId}`, JSON.stringify(room));
     return room;
 });

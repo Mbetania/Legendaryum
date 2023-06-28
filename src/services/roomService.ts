@@ -1,7 +1,5 @@
-import { Redis } from "ioredis";
 import redisClient from "./redis";
 import { Room } from "../types/room";
-import { Client } from "../types/users";
 import { v4 as uuidv4 } from 'uuid';
 import { getClientById } from "./clientService";
 
@@ -31,12 +29,14 @@ export const getRoomById = async (roomId: string): Promise<Room | null> => {
 
   let room = JSON.parse(roomData);
 
-  // If clients data is not included in the serialization, we get it manually
+  // We get the full client data using the stored client IDs
   if (room.clients) {
     const clients = [];
     for (let clientId of room.clients) {
-      const clientData = await redisClient.get(`user:${clientId}`);
-      clients.push(clientData ? JSON.parse(clientData) : null);
+      const clientData = await getClientById(clientId);
+      if (clientData) {
+        clients.push(clientData);
+      }
     }
     room.clients = clients;
   }
@@ -47,15 +47,14 @@ export const getRoomById = async (roomId: string): Promise<Room | null> => {
 // Unir a un cliente a una sala
 export const joinRoom = async (roomId: string, clientId: string): Promise<Room | null> => {
   const roomData = await redisClient.get(`room:${roomId}`);
-  const clientData = await redisClient.get(`user:${clientId}`);
-  if (!roomData || !clientData) {
+  if (!roomData) {
     return null;
   }
 
   const room: Room = JSON.parse(roomData);
-  const client: Client = JSON.parse(clientData);
 
-  room.clients?.push(client);
+  // Instead of storing the full client object, we just store the client ID
+  room.clients?.push(clientId);
 
   await redisClient.set(`room:${roomId}`, JSON.stringify(room));
 

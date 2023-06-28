@@ -1,6 +1,6 @@
 import express from 'express';
-import { getCoinsInRoom } from '../../models/coins';
 import { HTTP_STATUS } from '../../types/http';
+import { getCoinsInRoom } from '../../services/coinService';
 
 export const readCoins = async (req: express.Request, res: express.Response) => {
   try {

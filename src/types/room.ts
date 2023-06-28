@@ -13,7 +13,7 @@ export interface Room{
   scale: Scale;
   ttl: number;
   capacity?: number;
-  clients?: Client[];
+  clients?: string[];
   coins?: Coin[];
   isActive?: boolean;
 }

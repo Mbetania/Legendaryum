@@ -6,12 +6,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const createClient = async (client: Client): Promise<void> => {
   const clientData = JSON.stringify(client);
-  await redisClient.set(`user:${client.username}`, clientData);
   await redisClient.set(`user:${client.id}`, clientData);
 };
 
 export const removeClient = async (client: Client): Promise<void> => {
-  await redisClient.del(`user:${client.username}`);
   await redisClient.del(`user:${client.id}`);
 };
 

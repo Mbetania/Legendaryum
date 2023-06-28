@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
-import {  getCoinsInRoom, associateCoinToUser } from '../models/coins';
+import { associateCoinToUser } from '../models/coins';
 import { Redis } from 'ioredis';
 import { createRoom, joinRoom, resetRoom } from '../services/roomService';
 import { authenticateClientById, getClientById } from '../services/clientService';

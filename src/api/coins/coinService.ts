@@ -18,6 +18,8 @@ export const getCoinsOfUser = async (userId: string) => {
   return coins;
 };
 
+
+
 export const associateCoinWithUser = async (userId: string, coinId: string, room: string) => {
   let redis;
   try {

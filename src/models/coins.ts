@@ -33,32 +33,6 @@ export const getCoin = async (coinId: string, client: Redis): Promise<Coin> => {
 // }
 
 //almacena coins en redis
-export const storeCoins = async(room: string, coins: Coin[]): Promise<void> => {
-  for (const coin of coins) {
-    const key = `coin:${coin.id}`;
-    const value = JSON.stringify(coin);
-    await redisClient.set(key, value, 'EX', 60 * 60); // TTL de 1 hora
-    await redisClient.sadd(`coins:${room}`, coin.id); // Add coinId to room's coin set
-  }
-}
-
-export const getCoinsInRoom = async (room: string): Promise<Coin[]> => {
-  const key = `coins:${room}`;
-  const coinIds = await redisClient.smembers(key);
-
-  if (!coinIds.length) {
-    throw new Error(`No coins found in room ${room}`);
-  }
-
-  const coins = [];
-  for (const coinId of coinIds) {
-    const coin = await getCoin(coinId, redisClient);
-    coins.push(coin);
-  }
-
-  console.log(`Retrieved ${coins.length} coins from room ${room}`);
-  return coins;
-};
 
 
 
