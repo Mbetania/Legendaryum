@@ -1,6 +1,6 @@
 import { Coin } from '../types/coin';
 import { randomInRange } from '../utils/positionGeneration';
-import redisClient from './redis';
+import redisClient from '../services/redis';
 import { v4 as uuidv4 } from 'uuid';
 import { Redis } from 'ioredis'; // Importar `Redis` en lugar de `RedisClient`
 

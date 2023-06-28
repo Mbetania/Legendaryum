@@ -7,9 +7,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import redisClient from "../models/redis";
+import redisClient from "./redis";
 import { ClientStatus } from "../types/users";
 import { generateToken } from "./authService";
+import { v4 as uuidv4 } from 'uuid';
 export const createClient = (client) => __awaiter(void 0, void 0, void 0, function* () {
     const clientData = JSON.stringify(client);
     yield redisClient.set(`user:${client.username}`, clientData);
@@ -30,11 +31,12 @@ export const getClientByUsername = (username) => __awaiter(void 0, void 0, void 
 export const authenticateClientById = (username, userId) => __awaiter(void 0, void 0, void 0, function* () {
     let user = yield getClientById(userId);
     if (!user) {
+        const id = uuidv4();
         const newClient = {
-            id: userId,
+            id: id,
             username: username,
             status: ClientStatus.PENDING,
-            token: generateToken({ id: userId, username: username }),
+            token: generateToken({ id: id, username: username }),
             coins: [],
         };
         yield createClient(newClient);

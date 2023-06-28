@@ -14,8 +14,10 @@ export interface Room{
   ttl: number;
   capacity?: number;
   clients?: Client[];
-  coins?: Coin[]
+  coins?: Coin[];
+  isActive?: boolean;
 }
+
 
 export interface GameConfig {
   room: Room;

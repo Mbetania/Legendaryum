@@ -7,7 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import redisClient from './redis';
+import redisClient from '../services/redis';
 export const getCoin = (coinId, client) => __awaiter(void 0, void 0, void 0, function* () {
     const coin = yield client.get(`coin:${coinId}`);
     if (!coin) {

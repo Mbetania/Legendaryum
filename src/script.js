@@ -4,12 +4,13 @@ import  io from 'socket.io-client';
 const socket = io('http://localhost:3000');
 
 // Define the room you're in
-const room = 'room1';
+const room = 'b97f1767-622b-4797-9cd2-7560e59e81f1';
+const userId = "2799a2a2-b7f3-4ef7-a60d-d1d518044788";
 
 // When you connect, join the room
 socket.on('connect', () => {
   console.log('Connected to server');
-  socket.emit('join', room);
+  socket.emit('join room', { roomId: room, userId: userId });
 });
 
 // Listen for the coins received from the server
