@@ -40,9 +40,9 @@ roomsRouter.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* 
 }));
 roomsRouter.post('/:roomId/addClient', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { roomId } = req.params;
-    const { clientId } = req.body;
+    const { userId } = req.body;
     try {
-        const room = yield joinRoom(roomId, clientId);
+        const room = yield joinRoom(roomId, userId);
         if (!room) {
             res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Failed to add client to room' });
         }

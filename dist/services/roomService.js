@@ -12,6 +12,13 @@ import { v4 as uuidv4 } from 'uuid';
 // Crea una sala al inicio del servidor
 export const createRoom = (room) => __awaiter(void 0, void 0, void 0, function* () {
     room.id = uuidv4();
+    room.coinsAmount = 0; // Agrega las propiedades aquí
+    room.scale = { x: 0, y: 0, z: 0 }; // Agrega las propiedades aquí
+    room.ttl = 0; // Agrega las propiedades aquí
+    room.capacity = 4; // Agrega las propiedades aquí
+    room.clients = []; // Agrega las propiedades aquí
+    room.coins = []; // Agrega las propiedades aquí
+    room.isActive = false; // Agrega las propiedades aquí
     const roomData = JSON.stringify(room);
     yield redisClient.set(`room:${room.id}`, roomData);
     return room;
@@ -21,25 +28,29 @@ export const getRoomById = (roomId) => __awaiter(void 0, void 0, void 0, functio
     if (!roomData) {
         return null;
     }
-    const room = JSON.parse(roomData);
+    let room = JSON.parse(roomData);
+    // If clients data is not included in the serialization, we get it manually
+    if (room.clients) {
+        const clients = [];
+        for (let clientId of room.clients) {
+            const clientData = yield redisClient.get(`user:${clientId}`);
+            clients.push(clientData ? JSON.parse(clientData) : null);
+        }
+        room.clients = clients;
+    }
     return room;
 });
 // Unir a un cliente a una sala
 export const joinRoom = (roomId, clientId) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a;
     const roomData = yield redisClient.get(`room:${roomId}`);
-    const clientData = yield redisClient.get(`client:${clientId}`);
+    const clientData = yield redisClient.get(`user:${clientId}`);
     if (!roomData || !clientData) {
         return null;
     }
     const room = JSON.parse(roomData);
     const client = JSON.parse(clientData);
     (_a = room.clients) === null || _a === void 0 ? void 0 : _a.push(client);
-    // If the room is full, change the room status to active and generate coins
-    if (((_b = room.clients) === null || _b === void 0 ? void 0 : _b.length) === room.capacity) {
-        room.isActive = true;
-        // generate coins here
-    }
     yield redisClient.set(`room:${roomId}`, JSON.stringify(room));
     return room;
 });

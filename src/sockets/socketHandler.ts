@@ -5,7 +5,7 @@ import { Redis } from 'ioredis';
 import { createRoom, joinRoom, resetRoom } from '../services/roomService';
 import { authenticateClientById, getClientById } from '../services/clientService';
 
-
+export let socketToClientMap:{[socketId: string]: string } = {};
 
 export const socketHandler = (io: Server) => {
   const redis = new Redis();
@@ -14,6 +14,8 @@ export const socketHandler = (io: Server) => {
 
     socket.on('authenticate', async (data: {userId:string, username:string}) =>{
       const client = await authenticateClientById(data.userId, data.username);
+      // Store the mapping between socket.id and client.id
+      socketToClientMap[socket.id] = client.id;
       socket.emit('authenticated', { token: client.token});
     })
 
@@ -45,6 +47,7 @@ export const socketHandler = (io: Server) => {
           socket.emit('joined room', {roomId: room?.id});
         } catch (error) {
           // Enviar un mensaje de error al cliente
+          console.error('Error in joinRoom:', error);
           socket.emit('error', {message: 'Unable to join room. Room is full.'});
         }
       }else{

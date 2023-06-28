@@ -12,12 +12,15 @@ import { associateCoinToUser } from '../models/coins';
 import { Redis } from 'ioredis';
 import { createRoom, joinRoom } from '../services/roomService';
 import { authenticateClientById, getClientById } from '../services/clientService';
+export let socketToClientMap = {};
 export const socketHandler = (io) => {
     const redis = new Redis();
     io.on('connection', (socket) => {
         console.log('A user connected with id', socket.id);
         socket.on('authenticate', (data) => __awaiter(void 0, void 0, void 0, function* () {
             const client = yield authenticateClientById(data.userId, data.username);
+            // Store the mapping between socket.id and client.id
+            socketToClientMap[socket.id] = client.id;
             socket.emit('authenticated', { token: client.token });
         }));
         socket.on('get client data', (userId) => __awaiter(void 0, void 0, void 0, function* () {
@@ -43,6 +46,7 @@ export const socketHandler = (io) => {
                 }
                 catch (error) {
                     // Enviar un mensaje de error al cliente
+                    console.error('Error in joinRoom:', error);
                     socket.emit('error', { message: 'Unable to join room. Room is full.' });
                 }
             }

@@ -13,6 +13,7 @@ import { Server } from 'socket.io';
 import usersRouter from './router/usersRouter';
 import { socketHandler } from "./sockets/socketHandler";
 import roomsRouter from "./router/roomsRouter";
+import debugRouter from "./router/debugRouter";
 const app = express();
 const port = 3000;
 app.use(express.json());
@@ -21,6 +22,7 @@ const io = new Server(httpServer);
 app.use('/users', usersRouter);
 // app.use('/', usersRouter);
 app.use('/rooms', roomsRouter);
+app.use('/debug', debugRouter);
 socketHandler(io);
 function init() {
     return __awaiter(this, void 0, void 0, function* () {

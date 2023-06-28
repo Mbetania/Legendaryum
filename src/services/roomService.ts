@@ -3,11 +3,20 @@ import redisClient from "./redis";
 import { Room } from "../types/room";
 import { Client } from "../types/users";
 import { v4 as uuidv4 } from 'uuid';
+import { getClientById } from "./clientService";
 
 
 // Crea una sala al inicio del servidor
 export const createRoom = async (room: Room): Promise<Room> => {
   room.id = uuidv4();
+  room.coinsAmount = 0; // Agrega las propiedades aquí
+  room.scale = { x: 0, y: 0, z: 0 }; // Agrega las propiedades aquí
+  room.ttl = 0; // Agrega las propiedades aquí
+  room.capacity = 4; // Agrega las propiedades aquí
+  room.clients = []; // Agrega las propiedades aquí
+  room.coins = []; // Agrega las propiedades aquí
+  room.isActive = false; // Agrega las propiedades aquí
+
   const roomData = JSON.stringify(room)
   await redisClient.set(`room:${room.id}`, roomData);
   return room;
@@ -20,14 +29,25 @@ export const getRoomById = async (roomId: string): Promise<Room | null> => {
     return null;
   }
 
-  const room = JSON.parse(roomData);
+  let room = JSON.parse(roomData);
+
+  // If clients data is not included in the serialization, we get it manually
+  if (room.clients) {
+    const clients = [];
+    for (let clientId of room.clients) {
+      const clientData = await redisClient.get(`user:${clientId}`);
+      clients.push(clientData ? JSON.parse(clientData) : null);
+    }
+    room.clients = clients;
+  }
+
   return room;
 };
+
 // Unir a un cliente a una sala
 export const joinRoom = async (roomId: string, clientId: string): Promise<Room | null> => {
   const roomData = await redisClient.get(`room:${roomId}`);
-  const clientData = await redisClient.get(`client:${clientId}`);
-
+  const clientData = await redisClient.get(`user:${clientId}`);
   if (!roomData || !clientData) {
     return null;
   }
@@ -36,12 +56,6 @@ export const joinRoom = async (roomId: string, clientId: string): Promise<Room |
   const client: Client = JSON.parse(clientData);
 
   room.clients?.push(client);
-
-  // If the room is full, change the room status to active and generate coins
-  if (room.clients?.length === room.capacity) {
-    room.isActive = true;
-    // generate coins here
-  }
 
   await redisClient.set(`room:${roomId}`, JSON.stringify(room));
 
