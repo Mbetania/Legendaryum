@@ -9,7 +9,6 @@ export const createRoom = async (room: Room): Promise<Room> => {
   room.id = uuidv4();
   room.coinsAmount = 0; // Agrega las propiedades aquí
   room.scale = { x: 0, y: 0, z: 0 }; // Agrega las propiedades aquí
-  room.ttl = 0; // Agrega las propiedades aquí
   room.capacity = 4; // Agrega las propiedades aquí
   room.clients = []; // Agrega las propiedades aquí
   room.coins = []; // Agrega las propiedades aquí

@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { Redis } from 'ioredis';
-import { Client, ClientStatus, User } from '../types/users';
+import {  User } from '../types/users';
 
 export const JWT_TOKEN = process.env.JWT_SECRET || 'fallback-secret-key';
 

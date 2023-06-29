@@ -1,9 +1,9 @@
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
-import { associateCoinToUser } from '../models/coins';
 import { Redis } from 'ioredis';
 import { createRoom, joinRoom, resetRoom } from '../services/roomService';
 import { authenticateClientById, getClientById } from '../services/clientService';
+import { collectCoin } from '../api/coins/coinService';
 
 export let socketToClientMap:{[socketId: string]: string } = {};
 
@@ -59,7 +59,7 @@ export const socketHandler = (io: Server) => {
     socket.on('grabCoin', async ({ id: coinId, room }) => {
       console.log(`User ${socket.id} grabbed coin ${coinId} in room ${room}`);
       // Associate the coin with the user
-      await associateCoinToUser(socket.id, coinId, room, redis);
+      await collectCoin(socket.id, coinId, room, redis);
 
       // Emit coinUnavailable event to all other clients in the room
       socket.to(room).emit('coinUnavailable', coinId);
@@ -68,6 +68,7 @@ export const socketHandler = (io: Server) => {
     // When a client disconnects
     socket.on('disconnect', () => {
       console.log('A user disconnected', socket.id);
+      delete socketToClientMap[socket.id]
     });
   });
 }

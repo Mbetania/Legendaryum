@@ -1,5 +1,4 @@
-import { Coin } from "./coin";
-import { Client } from "./users";
+
 
 export interface Scale {
   x: number;
@@ -8,13 +7,12 @@ export interface Scale {
 }
 
 export interface Room{
-  id?: string;
+  id: string;
   coinsAmount: number;
   scale: Scale;
-  ttl: number;
   capacity?: number;
   clients?: string[];
-  coins?: Coin[];
+  coins?: string[];
   isActive?: boolean;
 }
 

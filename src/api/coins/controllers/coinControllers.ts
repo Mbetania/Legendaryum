@@ -1,6 +1,7 @@
 import express from 'express';
-import { associateCoinWithUser, getCoinsOfUser } from '../coinService';
 import { HTTP_STATUS } from '../../../types/http';
+import { collectCoin, getCoinsOfUser } from '../coinService';
+import { getCoinsInRoom } from '../../../services/coinService';
 
 const coinControllersRouter = express.Router();
 
@@ -30,11 +31,26 @@ coinControllersRouter.post('/:userId/:coinId/:room', async (req, res, next) => {
   }
 
   try {
-    await associateCoinWithUser(userId, coinId, room);
+    await collectCoin(userId, coinId, room);
     res.status(HTTP_STATUS.OK).json({ message: 'Coin successfully associated with the user' });
   } catch (error) {
     console.error('Error associating coin to user:', error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error associating coin to user');
+  }
+});
+
+coinControllersRouter.get('/:room/coins', async (req, res, next) => {
+  const { room } = req.params;
+  if (!room) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'room is required' });
+  }
+
+  try {
+    const coins = await getCoinsInRoom(room);
+    res.json(coins);
+  } catch (error) {
+    console.error('Error fetching room coins:', error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error fetching room coins');
   }
 });
 

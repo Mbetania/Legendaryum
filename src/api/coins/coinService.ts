@@ -1,9 +1,10 @@
 import { Redis } from 'ioredis';
-import { getCoin, getUserCoins, isCoinAssociatedToUser, associateCoinToUser } from '../../models/coins';
+import { generateAndStoreCoins, getCoin, getUserCoins, isCoinAssociatedToUser } from '../../models/coins';
 import { Coin } from '../../types/coin';
+import redisClient from '../../services/redis';
 
 export const getCoinsOfUser = async (userId: string) => {
-  const redis = new Redis();
+  const client = new Redis();
   const coinIds = await getUserCoins(userId, redis);
   const coins: Coin[] = [];
   for (let id of coinIds) {
@@ -14,11 +15,31 @@ export const getCoinsOfUser = async (userId: string) => {
     }
     coins.push(coin);
   }
-  redis.disconnect();
+  client.disconnect();
   return coins;
 };
 
+// Asigna un número de monedas a una sala
+export const assignCoinsToRoom = async (roomId: string, numCoins: number): Promise<void> => {
+  const pipeline = redisClient.pipeline();
 
+  for (let i = 0; i < numCoins; i++) {
+    const coinId = await generateAndStoreCoins(redisClient, numCoins); // Función que crea un ID único para una moneda
+    pipeline.sadd(`room:${roomId}:coins`, coinId);
+  }
+
+  await pipeline.exec();
+};
+
+// Un usuario recoje una moneda de una sala
+export const collectCoin = async (userId: string, coinId: string, roomId: string): Promise<void> => {
+  const pipeline = redisClient.pipeline();
+
+  pipeline.srem(`room:${roomId}:coins`, coinId);
+  pipeline.sadd(`user:${userId}:coins`, coinId);
+
+  await pipeline.exec();
+};
 
 export const associateCoinWithUser = async (userId: string, coinId: string, room: string) => {
   let redis;
@@ -29,12 +50,12 @@ export const associateCoinWithUser = async (userId: string, coinId: string, room
       throw new Error('The coin is already associated with a user');
     }
 
-    await associateCoinToUser(userId, coinId, room, redis);
+    await collectCoin(userId, coinId, room, redis);
   } catch (error) {
     throw error;
   } finally {
     if (redis) {
       redis.disconnect();
     }
-};
+  };
 }
