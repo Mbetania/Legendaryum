@@ -32,7 +32,6 @@ export const socketHandler = (io) => {
             socket.emit('room created', { id: createdRoom.id });
         }));
         // When a client joins a room
-        // When a client joins a room
         socket.on('join room', (data) => __awaiter(void 0, void 0, void 0, function* () {
             const client = yield getClientById(data.userId);
             if (client) {
