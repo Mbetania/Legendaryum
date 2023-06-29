@@ -7,7 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import redisClient from '../services/redis';
+import { v4 as uuidv4 } from 'uuid';
 export const getCoin = (coinId, client) => __awaiter(void 0, void 0, void 0, function* () {
     const coin = yield client.get(`coin:${coinId}`);
     if (!coin) {
@@ -15,46 +15,24 @@ export const getCoin = (coinId, client) => __awaiter(void 0, void 0, void 0, fun
     }
     return JSON.parse(coin);
 });
-// //generar coins
-// export const generateAndStoreCoins = async (room: string, coinsAmount: number, area: Area): Promise<void> => {
-//   const coins: Coin[] = [];
-//   for (let i = 0; i < coinsAmount; i++) {
-//     const coin: Coin = {
-//       id: uuidv4(),
-//       position: {
-//         x: randomInRange(area.xmin, area.xmax),
-//         y: randomInRange(area.ymin, area.ymax),
-//         z: randomInRange(area.zmin, area.zmax),
-//       },
-//       ttl: 60 * 60,
-//     };
-//     coins.push(coin);
-//   }
-//   await storeCoins(room, coins);
-// }
-//almacena coins en redis
-export const storeCoins = (room, coins) => __awaiter(void 0, void 0, void 0, function* () {
-    for (const coin of coins) {
-        const key = `coin:${coin.id}`;
-        const value = JSON.stringify(coin);
-        yield redisClient.set(key, value, 'EX', 60 * 60); // TTL de 1 hora
-        yield redisClient.sadd(`coins:${room}`, coin.id); // Add coinId to room's coin set
-    }
-});
-export const getCoinsInRoom = (room) => __awaiter(void 0, void 0, void 0, function* () {
-    const key = `coins:${room}`;
-    const coinIds = yield redisClient.smembers(key);
-    if (!coinIds.length) {
-        throw new Error(`No coins found in room ${room}`);
-    }
+// Genera una serie de monedas para una sala específica.
+export const generateCoins = (room) => {
     const coins = [];
-    for (const coinId of coinIds) {
-        const coin = yield getCoin(coinId, redisClient);
+    for (let i = 0; i < room.coinsAmount; i++) {
+        const coin = {
+            id: uuidv4(),
+            position: {
+                x: Math.random() * room.scale.x,
+                y: Math.random() * room.scale.y,
+                z: Math.random() * room.scale.z,
+            },
+            ttl: 60 * 60,
+            isCollected: false
+        };
         coins.push(coin);
     }
-    console.log(`Retrieved ${coins.length} coins from room ${room}`);
     return coins;
-});
+};
 export const getUserCoins = (userId, client) => __awaiter(void 0, void 0, void 0, function* () {
     const coinIds = yield client.smembers(`user:${userId}:coins`);
     return coinIds;
@@ -62,8 +40,4 @@ export const getUserCoins = (userId, client) => __awaiter(void 0, void 0, void 0
 export const isCoinAssociatedToUser = (userId, coinId, client) => __awaiter(void 0, void 0, void 0, function* () {
     const isMember = yield client.sismember(`user:${userId}:coins`, coinId);
     return isMember === 1;
-});
-export const associateCoinToUser = (userId, coinId, room, client) => __awaiter(void 0, void 0, void 0, function* () {
-    yield client.srem(`room:${room}:coins`, coinId);
-    yield client.sadd(`user:${userId}:coins`, coinId);
 });

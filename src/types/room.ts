@@ -8,7 +8,7 @@ export interface Scale {
 
 export interface Room{
   id: string;
-  coinsAmount: number;
+  coinsAmount: 2;
   scale: Scale;
   capacity?: number;
   clients?: string[];

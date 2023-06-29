@@ -1,14 +1,16 @@
 import { Redis } from 'ioredis';
-import { generateAndStoreCoins, getCoin, getUserCoins, isCoinAssociatedToUser } from '../../models/coins';
+import { generateCoins, getCoin, getUserCoins, isCoinAssociatedToUser } from '../../models/coins';
 import { Coin } from '../../types/coin';
 import redisClient from '../../services/redis';
+import { Room } from '../../types/room';
+import { getClientById } from '../../services/clientService';
 
 export const getCoinsOfUser = async (userId: string) => {
   const client = new Redis();
-  const coinIds = await getUserCoins(userId, redis);
+  const coinIds = await getUserCoins(userId, redisClient);
   const coins: Coin[] = [];
   for (let id of coinIds) {
-    const coin = await getCoin(id, redis);
+    const coin = await getCoin(id, redisClient);
     if (!coin) {
       console.error(`Coin with id ${id} does not exist`);
       continue;
@@ -19,43 +21,39 @@ export const getCoinsOfUser = async (userId: string) => {
   return coins;
 };
 
-// Asigna un número de monedas a una sala
-export const assignCoinsToRoom = async (roomId: string, numCoins: number): Promise<void> => {
-  const pipeline = redisClient.pipeline();
+//!DELETE
+// // Asigna un número de monedas a una sala.
+// export const assignCoinsToRoom = async (room: Room): Promise<Room> =>{
+//   const coins = generateCoins(room);
+//   room.coins = coins.map(coin => coin.id)
 
-  for (let i = 0; i < numCoins; i++) {
-    const coinId = await generateAndStoreCoins(redisClient, numCoins); // Función que crea un ID único para una moneda
-    pipeline.sadd(`room:${roomId}:coins`, coinId);
-  }
-
-  await pipeline.exec();
-};
+//   return room;
+// };
 
 // Un usuario recoje una moneda de una sala
-export const collectCoin = async (userId: string, coinId: string, roomId: string): Promise<void> => {
-  const pipeline = redisClient.pipeline();
+export const collectCoin = async (userId: string, coinId: string, roomId: string): Promise<void> =>{
+  const roomData = await redisClient.get(`room:${roomId}`);
+  if (!roomData) {
+    throw new Error('Room does not exist');
+  }
+  const room: Room = JSON.parse(roomData);
 
-  pipeline.srem(`room:${roomId}:coins`, coinId);
-  pipeline.sadd(`user:${userId}:coins`, coinId);
+  // Comprobar si la moneda existe en la sala
+  const coinExists = room.coins?.find(id => id === coinId);
+  if (!coinExists) {
+    throw new Error('Coin does not exist in room');
+  }
 
-  await pipeline.exec();
+  // Remover la moneda de la sala
+  room.coins = room.coins?.filter(id => id !== coinId);
+  await redisClient.set(`room:${roomId}`, JSON.stringify(room));
+
+  // Asociar la moneda con el usuario
+  const client = await getClientById(userId);
+  if (!client) {
+    throw new Error('Client does not exist');
+  }
+  client.coins = client.coins || [];
+  client.coins.push(coinId);
+  await redisClient.set(`client:${userId}`, JSON.stringify(client));
 };
-
-export const associateCoinWithUser = async (userId: string, coinId: string, room: string) => {
-  let redis;
-  try {
-    redis = new Redis();
-    const isAssociated = await isCoinAssociatedToUser(userId, coinId, redis);
-    if (isAssociated) {
-      throw new Error('The coin is already associated with a user');
-    }
-
-    await collectCoin(userId, coinId, room, redis);
-  } catch (error) {
-    throw error;
-  } finally {
-    if (redis) {
-      redis.disconnect();
-    }
-  };
-}

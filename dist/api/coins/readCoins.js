@@ -7,8 +7,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { getCoinsInRoom } from '../../models/coins';
 import { HTTP_STATUS } from '../../types/http';
+import { getCoinsInRoom } from '../../services/coinService';
 export const readCoins = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const coins = yield getCoinsInRoom(req.params.room);

@@ -8,8 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import express from 'express';
-import { associateCoinWithUser, getCoinsOfUser } from '../coinService';
 import { HTTP_STATUS } from '../../../types/http';
+import { collectCoin, getCoinsOfUser } from '../coinService';
+import { getCoinsInRoom } from '../../../services/coinService';
 const coinControllersRouter = express.Router();
 coinControllersRouter.get('/:userId/coins', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;
@@ -34,12 +35,26 @@ coinControllersRouter.post('/:userId/:coinId/:room', (req, res, next) => __await
         return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'userId, coinId and room are required' });
     }
     try {
-        yield associateCoinWithUser(userId, coinId, room);
+        yield collectCoin(userId, coinId, room);
         res.status(HTTP_STATUS.OK).json({ message: 'Coin successfully associated with the user' });
     }
     catch (error) {
         console.error('Error associating coin to user:', error);
         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error associating coin to user');
+    }
+}));
+coinControllersRouter.get('/:room/coins', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const { room } = req.params;
+    if (!room) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'room is required' });
+    }
+    try {
+        const coins = yield getCoinsInRoom(room);
+        res.json(coins);
+    }
+    catch (error) {
+        console.error('Error fetching room coins:', error);
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error fetching room coins');
     }
 }));
 export default coinControllersRouter;

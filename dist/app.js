@@ -8,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import express from "express";
+import cors from "cors";
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import usersRouter from './router/usersRouter';
@@ -16,9 +17,15 @@ import roomsRouter from "./router/roomsRouter";
 import debugRouter from "./router/debugRouter";
 const app = express();
 const port = 3000;
+app.use(cors()); // habilita CORS para todas las rutas
 app.use(express.json());
 const httpServer = createServer(app);
-const io = new Server(httpServer);
+const io = new Server(httpServer, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"] // permite métodos GET y POST
+    }
+});
 app.use('/users', usersRouter);
 // app.use('/', usersRouter);
 app.use('/rooms', roomsRouter);

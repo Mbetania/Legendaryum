@@ -1,9 +1,8 @@
 import { Server, Socket } from 'socket.io';
-import { v4 as uuidv4 } from 'uuid';
 import { Redis } from 'ioredis';
-import { createRoom, joinRoom, resetRoom } from '../services/roomService';
+import { createRoom, generateCoinForRoom, getRoomById, joinRoom, resetRoom } from '../services/roomService';
 import { authenticateClientById, getClientById } from '../services/clientService';
-import { collectCoin } from '../api/coins/coinService';
+import redisClient from '../services/redis';
 
 export let socketToClientMap:{[socketId: string]: string } = {};
 
@@ -25,50 +24,71 @@ export const socketHandler = (io: Server) => {
     })
 
     socket.on('create room', async (roomData) => {
-      // Genera un ID único para la sala
-      const roomId = uuidv4();
       const room = {
-        id: roomId,
         ...roomData,
       };
 
-      await createRoom(room);
-      socket.emit('room created', {id: roomId});
+      const createdRoom = await createRoom(room);
+      socket.emit('room created', {id: createdRoom.id});
     });
 
     // When a client joins a room
-    socket.on('join room', async (data: {roomId: string, userId: string}) => {
-      const client = await getClientById(data.userId);
-      if(client){
-        try {
-          const room = await joinRoom(data.roomId, client.id);
-          socket.to(data.roomId).emit('client joined', {clientId: client?.id})
-          console.log(`User ${socket.id} joined room ${room}`);
-          socket.emit('joined room', {roomId: room?.id});
-        } catch (error) {
-          // Enviar un mensaje de error al cliente
-          console.error('Error in joinRoom:', error);
-          socket.emit('error', {message: 'Unable to join room. Room is full.'});
-        }
-      }else{
-        socket.emit('error', {message: 'Unable to join room. Client not found'})
+socket.on('join room', async (data: {roomId: string, userId: string}) => {
+  const client = await getClientById(data.userId);
+  if(client){
+    try {
+      const room = await joinRoom(data.roomId, client.id);
+      socket.to(data.roomId).emit('client joined', {clientId: client?.id});
+      console.log(`User ${socket.id} joined room ${room?.id}`);
+      socket.emit('joined room', {roomId: room?.id});
+
+      // Generar monedas para la sala
+      const updatedRoom = await generateCoinForRoom(data.roomId);
+      if (updatedRoom) {
+        // Emitir un evento con las monedas generadas
+        io.to(data.roomId).emit('coins generated', { coins: updatedRoom.coins });
       }
-    });
+
+    } catch (error) {
+      // Enviar un mensaje de error al cliente
+      console.error('Error in joinRoom:', error);
+      socket.emit('error', {message: 'Unable to join room. Room is full.'});
+    }
+  }else{
+    socket.emit('error', {message: 'Unable to join room. Client not found'})
+  }
+  });
+
+
+
 
     // When a client grabs a coin
-    socket.on('grabCoin', async ({ id: coinId, room }) => {
-      console.log(`User ${socket.id} grabbed coin ${coinId} in room ${room}`);
-      // Associate the coin with the user
-      await collectCoin(socket.id, coinId, room, redis);
+    socket.on('grabCoin', async ({ coinId, roomId, clientId }) => {
+      console.log(`User ${clientId} grabbed coin ${coinId} in room ${roomId}`);
 
-      // Emit coinUnavailable event to all other clients in the room
-      socket.to(room).emit('coinUnavailable', coinId);
-    });
+      const client = await getClientById(clientId);
+      const room = await getRoomById(roomId);
 
-    // When a client disconnects
-    socket.on('disconnect', () => {
-      console.log('A user disconnected', socket.id);
-      delete socketToClientMap[socket.id]
+      if (client && room) {
+        // Associate the coin with the user
+        client.coins?.push(coinId); // Añade la moneda al cliente
+        await redisClient.set(`client:${clientId}`, JSON.stringify(client)); // Almacena el cliente en Redis
+
+        // Remove the coin from the room
+        room.coins = room.coins?.filter(id => id !== coinId);
+        await redisClient.set(`room:${roomId}`, JSON.stringify(room)); // Actualiza la sala en Redis
+
+        // Emit coinUnavailable event to all other clients in the room
+        socket.to(roomId).emit('coinUnavailable', coinId);
+      } else {
+        socket.emit('error', { message: 'Unable to grab coin. Client or room not found' });
+      }
+    })
+
+      // When a client disconnects
+      socket.on('disconnect', () => {
+        console.log('A user disconnected', socket.id);
+        delete socketToClientMap[socket.id]
+      });
     });
-  });
 }

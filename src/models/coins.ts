@@ -14,10 +14,10 @@ export const getCoin = async (coinId: string, client: Redis): Promise<Coin> => {
   return JSON.parse(coin);
 };
 
-//generar coins
-export const generateAndStoreCoins = async (room: Room, coinsAmount: number): Promise<void> => {
+// Genera una serie de monedas para una sala específica.
+export const generateCoins = (room: Room): Coin[] => {
   const coins: Coin[] = [];
-  for (let i = 0; i < coinsAmount; i++) {
+  for (let i = 0; i < room.coinsAmount; i++) {
     const coin: Coin = {
       id: uuidv4(),
       position: {
@@ -30,20 +30,7 @@ export const generateAndStoreCoins = async (room: Room, coinsAmount: number): Pr
     };
     coins.push(coin);
   }
-  await storeCoins(room.id, coins);
-}
-
-
-export const storeCoins = async(room: string, coins: Coin[]): Promise<void> => {
-  const pipeline = redisClient.pipeline();
-
-  for (const coin of coins) {
-    const key = `coin:${coin.id}`;
-    const value = JSON.stringify(coin);
-    pipeline.set(key, value, 'EX', 60 * 60); // TTL de 1 hora
-    pipeline.sadd(`coins:${room}`, coin.id); // Add coinId to room's coin set
-  }
-  await pipeline.exec();
+  return coins;
 }
 
 

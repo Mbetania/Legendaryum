@@ -2,12 +2,13 @@ import redisClient from "./redis";
 import { Room } from "../types/room";
 import { v4 as uuidv4 } from 'uuid';
 import { getClientById } from "./clientService";
+import { generateCoins } from "../models/coins";
 
 
 // Crea una sala al inicio del servidor
 export const createRoom = async (room: Room): Promise<Room> => {
   room.id = uuidv4();
-  room.coinsAmount = 0; // Agrega las propiedades aquí
+  room.coinsAmount = 2; // Agrega las propiedades aquí
   room.scale = { x: 0, y: 0, z: 0 }; // Agrega las propiedades aquí
   room.capacity = 4; // Agrega las propiedades aquí
   room.clients = []; // Agrega las propiedades aquí
@@ -52,11 +53,35 @@ export const joinRoom = async (roomId: string, clientId: string): Promise<Room |
 
   const room: Room = JSON.parse(roomData);
 
+  // Verifica si el cliente ya está en la sala
+  if (room.clients?.includes(clientId)) {
+    throw new Error('Client is already in the room');
+  }
+
   // Instead of storing the full client object, we just store the client ID
   room.clients?.push(clientId);
 
+  // Generar y asignar monedas inmediatamente después de que un cliente se une a la sala
+  room.coins = generateCoins(room).map(coin => coin.id); //mapeamos a un arrays de ids de coins
+  room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
+
   await redisClient.set(`room:${roomId}`, JSON.stringify(room));
 
+  return room;
+};
+
+export const generateCoinForRoom = async (roomId: string) : Promise<Room | null > =>{
+  const roomData = await redisClient.get(`room:${roomId}`)
+  if(!roomData){
+    return null;
+  }
+  const room: Room = JSON.parse(roomData)
+  if (room.clients?.length === room.capacity) {
+    // All clients have joined, so we can now generate and assign coins
+    room.coins = generateCoins(room).map(coin => coin.id); //mapeamos a un arrays de ids de coins
+    room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
+  }
+  await redisClient.set(`room:${roomId}`, JSON.stringify(room))
   return room;
 };
 
