@@ -1,15 +1,15 @@
 import express from "express";
 import { Redis } from "ioredis";
 import { Room} from "./room";
-import {  OwnedCoin } from "./coin";
 
 export interface Client {
   id: string;
   room?: Room;
+  roomId?: string;
   status: ClientStatus;
   username: string;
   token: string;
-  coins: OwnedCoin[];
+  coins: string[];
 }
 
 export enum ClientStatus {

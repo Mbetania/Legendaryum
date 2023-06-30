@@ -2,6 +2,7 @@ import redisClient from "./redis";
 import { Client, ClientStatus } from "../types/users";
 import { generateToken } from "./authService";
 import { v4 as uuidv4 } from 'uuid';
+import { Coin } from "../types/coin";
 
 
 export const createClient = async (client: Client): Promise<void> => {
@@ -25,10 +26,16 @@ export const getClientById = async(clientId: string): Promise<Client | null> => 
   return null;
 }
 
-// export const getClientByUsername = async (username: string): Promise<Client | null> => {
-//   const clientData = await redisClient.get(`user:${username}`);
-//   return clientData ? JSON.parse(clientData) : null;
-// }
+export const getCoinById = async(coinId: string): Promise<Coin | null> => {
+  const coinData = await redisClient.get(`coins:${coinId}`);
+  if(coinData){
+    const coin = JSON.parse(coinData);
+    return coin;
+  }
+  return null
+}
+
+
 
 
 

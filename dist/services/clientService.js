@@ -29,6 +29,14 @@ export const getClientById = (clientId) => __awaiter(void 0, void 0, void 0, fun
     }
     return null;
 });
+export const getCoinById = (coinId) => __awaiter(void 0, void 0, void 0, function* () {
+    const coinData = yield redisClient.get(`coins:${coinId}`);
+    if (coinData) {
+        const coin = JSON.parse(coinData);
+        return coin;
+    }
+    return null;
+});
 // export const getClientByUsername = async (username: string): Promise<Client | null> => {
 //   const clientData = await redisClient.get(`user:${username}`);
 //   return clientData ? JSON.parse(clientData) : null;

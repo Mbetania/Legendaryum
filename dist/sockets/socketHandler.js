@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { Redis } from 'ioredis';
 import { createRoom, getRoomById, joinRoom } from '../services/roomService';
-import { authenticateClientById, getClientById } from '../services/clientService';
+import { authenticateClientById, getClientById, getCoinById } from '../services/clientService';
 import redisClient from '../services/redis';
 export let socketToClientMap = {};
 export const socketHandler = (io) => {
@@ -57,14 +57,18 @@ export const socketHandler = (io) => {
             }
         }));
         // When a client grabs a coin
-        socket.on('grabCoin', ({ coinId, roomId, clientId }) => __awaiter(void 0, void 0, void 0, function* () {
+        socket.on('grabCoin', ({ coinId, roomId, clientId, position }) => __awaiter(void 0, void 0, void 0, function* () {
             var _a, _b;
             console.log(`User ${clientId} grabbed coin ${coinId} in room ${roomId}`);
             const client = yield getClientById(clientId);
             const room = yield getRoomById(roomId);
             if (client && room) {
                 // Associate the coin with the user
-                (_a = client.coins) === null || _a === void 0 ? void 0 : _a.push(coinId); // Añade la moneda al cliente
+                const { id, position } = (yield getCoinById(coinId)) || {};
+                console.log(id, position);
+                if (id && position) {
+                    (_a = client.coins) === null || _a === void 0 ? void 0 : _a.push({ id, position }); // Añade la moneda al cliente
+                }
                 yield redisClient.set(`client:${clientId}`, JSON.stringify(client)); // Almacena el cliente en Redis
                 // Remove the coin from the room
                 room.coins = (_b = room.coins) === null || _b === void 0 ? void 0 : _b.filter(id => id !== coinId);

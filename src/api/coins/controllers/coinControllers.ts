@@ -1,6 +1,6 @@
 import express from 'express';
 import { HTTP_STATUS } from '../../../types/http';
-import { collectCoin, getCoinsOfUser } from '../coinService';
+import { getCoinsOfUser } from '../coinService';
 import { getCoinsInRoom } from '../../../services/coinService';
 
 const coinControllersRouter = express.Router();
@@ -23,21 +23,21 @@ coinControllersRouter.get('/:userId/coins', async (req, res, next) => {
   }
 });
 
-coinControllersRouter.post('/:userId/:coinId/:room', async (req, res, next) => {
-  const { userId, coinId, room } = req.params;
+// coinControllersRouter.post('/:userId/:coinId/:room', async (req, res, next) => {
+//   const { userId, coinId, room } = req.params;
 
-  if (!userId || !coinId || !room) {
-    return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'userId, coinId and room are required' });
-  }
+//   if (!userId || !coinId || !room) {
+//     return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'userId, coinId and room are required' });
+//   }
 
-  try {
-    await collectCoin(userId, coinId, room);
-    res.status(HTTP_STATUS.OK).json({ message: 'Coin successfully associated with the user' });
-  } catch (error) {
-    console.error('Error associating coin to user:', error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error associating coin to user');
-  }
-});
+//   try {
+//     await collectCoin(userId, coinId, room);
+//     res.status(HTTP_STATUS.OK).json({ message: 'Coin successfully associated with the user' });
+//   } catch (error) {
+//     console.error('Error associating coin to user:', error);
+//     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error associating coin to user');
+//   }
+// });
 
 coinControllersRouter.get('/:room/coins', async (req, res, next) => {
   const { room } = req.params;

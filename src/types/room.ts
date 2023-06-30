@@ -1,3 +1,4 @@
+import { Coin } from "./coin";
 
 
 export interface Scale {
@@ -8,15 +9,10 @@ export interface Scale {
 
 export interface Room{
   id: string;
-  coinsAmount: 2;
+  coinsAmount: number;
   scale: Scale;
   capacity?: number;
   clients?: string[];
-  coins?: string[];
+  coins?: Coin[];
   isActive?: boolean;
-}
-
-
-export interface GameConfig {
-  room: Room;
 }

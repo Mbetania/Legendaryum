@@ -1,8 +1,9 @@
 import { Server, Socket } from 'socket.io';
 import { Redis } from 'ioredis';
 import { createRoom, generateCoinForRoom, getRoomById, joinRoom, resetRoom } from '../services/roomService';
-import { authenticateClientById, getClientById } from '../services/clientService';
+import { authenticateClientById, getClientById, getCoinById } from '../services/clientService';
 import redisClient from '../services/redis';
+import { Coin } from '../types/coin';
 
 export let socketToClientMap:{[socketId: string]: string } = {};
 
@@ -58,7 +59,7 @@ export const socketHandler = (io: Server) => {
   });
 
     // When a client grabs a coin
-    socket.on('grabCoin', async ({ coinId, roomId, clientId }) => {
+    socket.on('grabCoin', async ({ coinId, roomId, clientId, position }) => {
       console.log(`User ${clientId} grabbed coin ${coinId} in room ${roomId}`);
 
       const client = await getClientById(clientId);
@@ -66,7 +67,12 @@ export const socketHandler = (io: Server) => {
 
       if (client && room) {
         // Associate the coin with the user
-        client.coins?.push(coinId); // Añade la moneda al cliente
+        const { id, position } =  await getCoinById(coinId) || {};
+        console.log(id, position)
+
+        if ( id && position ){
+          client.coins?.push({ id,position}); // Añade la moneda al cliente
+        }
         await redisClient.set(`client:${clientId}`, JSON.stringify(client)); // Almacena el cliente en Redis
 
         // Remove the coin from the room

@@ -1,0 +1,10 @@
+{
+    "capacity": 4,
+    "coinsAmount": 10,
+    "scale": {
+        "x": 10,
+        "y": 10,
+        "z": 10
+    },
+    "ttl": 3600
+}

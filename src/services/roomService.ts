@@ -3,17 +3,16 @@ import { Room } from "../types/room";
 import { v4 as uuidv4 } from 'uuid';
 import { getClientById } from "./clientService";
 import { generateCoins } from "../models/coins";
+import config from '../utils/readJSONConfig'
 
-
-// Crea una sala al inicio del servidor
 export const createRoom = async (room: Room): Promise<Room> => {
   room.id = uuidv4();
-  room.coinsAmount = 2; // Agrega las propiedades aquí
-  room.scale = { x: 0, y: 0, z: 0 }; // Agrega las propiedades aquí
-  room.capacity = 4; // Agrega las propiedades aquí
-  room.clients = []; // Agrega las propiedades aquí
-  room.coins = []; // Agrega las propiedades aquí
-  room.isActive = false; // Agrega las propiedades aquí
+  room.coinsAmount = config.coinsAmount;
+  room.scale = config.scale;
+  room.capacity = config.capacity;
+  room.clients = [];
+  room.coins = [];
+  room.isActive = false;
 
   const roomData = JSON.stringify(room)
   await redisClient.set(`room:${room.id}`, roomData);
@@ -68,7 +67,7 @@ export const joinRoom = async (roomId: string, clientId: string): Promise<Room |
 
   // Generar y asignar monedas inmediatamente después de que un cliente se une a la sala
   if (room.clients?.length === room.capacity) {
-    room.coins = generateCoins(room).map(coin => coin.id); //mapeamos a un arrays de ids de coins
+    room.coins = generateCoins(room); //mapeamos a un arrays de ids de coins
     room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
   }
 
@@ -86,7 +85,7 @@ export const generateCoinForRoom = async (roomId: string) : Promise<Room | null 
   const room: Room = JSON.parse(roomData)
   if (room.clients?.length === room.capacity) {
     // All clients have joined, so we can now generate and assign coins
-    room.coins = generateCoins(room).map(coin => coin.id); //mapeamos a un arrays de ids de coins
+    room.coins = generateCoins(room)
     room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
   }
   await redisClient.set(`room:${roomId}`, JSON.stringify(room))

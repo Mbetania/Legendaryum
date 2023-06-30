@@ -11,15 +11,15 @@ import redisClient from "./redis";
 import { v4 as uuidv4 } from 'uuid';
 import { getClientById } from "./clientService";
 import { generateCoins } from "../models/coins";
-// Crea una sala al inicio del servidor
+import config from '../utils/readJSONConfig';
 export const createRoom = (room) => __awaiter(void 0, void 0, void 0, function* () {
     room.id = uuidv4();
-    room.coinsAmount = 2; // Agrega las propiedades aquí
-    room.scale = { x: 0, y: 0, z: 0 }; // Agrega las propiedades aquí
-    room.capacity = 4; // Agrega las propiedades aquí
-    room.clients = []; // Agrega las propiedades aquí
-    room.coins = []; // Agrega las propiedades aquí
-    room.isActive = false; // Agrega las propiedades aquí
+    room.coinsAmount = config.coinsAmount;
+    room.scale = config.scale;
+    room.capacity = config.capacity;
+    room.clients = [];
+    room.coins = [];
+    room.isActive = false;
     const roomData = JSON.stringify(room);
     yield redisClient.set(`room:${room.id}`, roomData);
     return room;
@@ -63,7 +63,7 @@ export const joinRoom = (roomId, clientId) => __awaiter(void 0, void 0, void 0, 
     (_c = room.clients) === null || _c === void 0 ? void 0 : _c.push(clientId);
     // Generar y asignar monedas inmediatamente después de que un cliente se une a la sala
     if (((_d = room.clients) === null || _d === void 0 ? void 0 : _d.length) === room.capacity) {
-        room.coins = generateCoins(room).map(coin => coin.id); //mapeamos a un arrays de ids de coins
+        room.coins = generateCoins(room); //mapeamos a un arrays de ids de coins
         room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
     }
     yield redisClient.set(`room:${roomId}`, JSON.stringify(room));
@@ -78,7 +78,7 @@ export const generateCoinForRoom = (roomId) => __awaiter(void 0, void 0, void 0,
     const room = JSON.parse(roomData);
     if (((_e = room.clients) === null || _e === void 0 ? void 0 : _e.length) === room.capacity) {
         // All clients have joined, so we can now generate and assign coins
-        room.coins = generateCoins(room).map(coin => coin.id); //mapeamos a un arrays de ids de coins
+        room.coins = generateCoins(room);
         room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
     }
     yield redisClient.set(`room:${roomId}`, JSON.stringify(room));

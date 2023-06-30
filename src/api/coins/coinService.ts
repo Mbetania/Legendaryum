@@ -21,39 +21,30 @@ export const getCoinsOfUser = async (userId: string) => {
   return coins;
 };
 
-//!DELETE
-// // Asigna un número de monedas a una sala.
-// export const assignCoinsToRoom = async (room: Room): Promise<Room> =>{
-//   const coins = generateCoins(room);
-//   room.coins = coins.map(coin => coin.id)
+// // Un usuario recoje una moneda de una sala
+// export const collectCoin = async (userId: string, coinId: string, roomId: string): Promise<void> =>{
+//   const roomData = await redisClient.get(`room:${roomId}`);
+//   if (!roomData) {
+//     throw new Error('Room does not exist');
+//   }
+//   const room: Room = JSON.parse(roomData);
 
-//   return room;
+//   // Comprobar si la moneda existe en la sala
+//   const coinExists = room.coins?.find(id => id === coinId);
+//   if (!coinExists) {
+//     throw new Error('Coin does not exist in room');
+//   }
+
+//   // Remover la moneda de la sala
+//   room.coins = room.coins?.filter(id => id !== coinId);
+//   await redisClient.set(`room:${roomId}`, JSON.stringify(room));
+
+//   // Asociar la moneda con el usuario
+//   const client = await getClientById(userId);
+//   if (!client) {
+//     throw new Error('Client does not exist');
+//   }
+//   client.coins = client.coins || [];
+//   client.coins.push(coinId);
+//   await redisClient.set(`client:${userId}`, JSON.stringify(client));
 // };
-
-// Un usuario recoje una moneda de una sala
-export const collectCoin = async (userId: string, coinId: string, roomId: string): Promise<void> =>{
-  const roomData = await redisClient.get(`room:${roomId}`);
-  if (!roomData) {
-    throw new Error('Room does not exist');
-  }
-  const room: Room = JSON.parse(roomData);
-
-  // Comprobar si la moneda existe en la sala
-  const coinExists = room.coins?.find(id => id === coinId);
-  if (!coinExists) {
-    throw new Error('Coin does not exist in room');
-  }
-
-  // Remover la moneda de la sala
-  room.coins = room.coins?.filter(id => id !== coinId);
-  await redisClient.set(`room:${roomId}`, JSON.stringify(room));
-
-  // Asociar la moneda con el usuario
-  const client = await getClientById(userId);
-  if (!client) {
-    throw new Error('Client does not exist');
-  }
-  client.coins = client.coins || [];
-  client.coins.push(coinId);
-  await redisClient.set(`client:${userId}`, JSON.stringify(client));
-};
