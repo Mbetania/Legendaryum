@@ -13,21 +13,28 @@ import { generateToken } from "./authService";
 import { v4 as uuidv4 } from 'uuid';
 export const createClient = (client) => __awaiter(void 0, void 0, void 0, function* () {
     const clientData = JSON.stringify(client);
-    yield redisClient.set(`user:${client.id}`, clientData);
+    yield redisClient.set(`client:${client.id}`, clientData);
 });
 export const removeClient = (client) => __awaiter(void 0, void 0, void 0, function* () {
-    yield redisClient.del(`user:${client.id}`);
+    yield redisClient.del(`client:${client.id}`);
 });
-export const getClientById = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    const clientData = yield redisClient.get(`user:${userId}`);
-    return clientData ? JSON.parse(clientData) : null;
+export const getClientById = (clientId) => __awaiter(void 0, void 0, void 0, function* () {
+    const clientData = yield redisClient.get(`client:${clientId}`);
+    if (clientData) {
+        const client = JSON.parse(clientData);
+        if (!client.coins) {
+            client.coins = [];
+        }
+        return client;
+    }
+    return null;
 });
-export const getClientByUsername = (username) => __awaiter(void 0, void 0, void 0, function* () {
-    const clientData = yield redisClient.get(`user:${username}`);
-    return clientData ? JSON.parse(clientData) : null;
-});
-export const authenticateClientById = (username, userId) => __awaiter(void 0, void 0, void 0, function* () {
-    let user = yield getClientById(userId);
+// export const getClientByUsername = async (username: string): Promise<Client | null> => {
+//   const clientData = await redisClient.get(`user:${username}`);
+//   return clientData ? JSON.parse(clientData) : null;
+// }
+export const authenticateClientById = (username, clientId) => __awaiter(void 0, void 0, void 0, function* () {
+    let user = yield getClientById(clientId);
     if (!user) {
         const id = uuidv4();
         const newClient = {

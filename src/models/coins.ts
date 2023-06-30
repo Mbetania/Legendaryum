@@ -1,5 +1,4 @@
 import { Coin } from '../types/coin';
-import redisClient from '../services/redis';
 import { v4 as uuidv4 } from 'uuid';
 import { Redis } from 'ioredis';
 import { Room } from '../types/room';

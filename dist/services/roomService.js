@@ -45,7 +45,7 @@ export const getRoomById = (roomId) => __awaiter(void 0, void 0, void 0, functio
 });
 // Unir a un cliente a una sala
 export const joinRoom = (roomId, clientId) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a, _b, _c, _d;
     const roomData = yield redisClient.get(`room:${roomId}`);
     if (!roomData) {
         return null;
@@ -55,22 +55,28 @@ export const joinRoom = (roomId, clientId) => __awaiter(void 0, void 0, void 0, 
     if ((_a = room.clients) === null || _a === void 0 ? void 0 : _a.includes(clientId)) {
         throw new Error('Client is already in the room');
     }
+    // Verifica si la sala ha alcanzado su capacidad
+    if (((_b = room.clients) === null || _b === void 0 ? void 0 : _b.length) === room.capacity) {
+        throw new Error('Room is full');
+    }
     // Instead of storing the full client object, we just store the client ID
-    (_b = room.clients) === null || _b === void 0 ? void 0 : _b.push(clientId);
+    (_c = room.clients) === null || _c === void 0 ? void 0 : _c.push(clientId);
     // Generar y asignar monedas inmediatamente después de que un cliente se une a la sala
-    room.coins = generateCoins(room).map(coin => coin.id); //mapeamos a un arrays de ids de coins
-    room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
+    if (((_d = room.clients) === null || _d === void 0 ? void 0 : _d.length) === room.capacity) {
+        room.coins = generateCoins(room).map(coin => coin.id); //mapeamos a un arrays de ids de coins
+        room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
+    }
     yield redisClient.set(`room:${roomId}`, JSON.stringify(room));
     return room;
 });
 export const generateCoinForRoom = (roomId) => __awaiter(void 0, void 0, void 0, function* () {
-    var _c;
+    var _e;
     const roomData = yield redisClient.get(`room:${roomId}`);
     if (!roomData) {
         return null;
     }
     const room = JSON.parse(roomData);
-    if (((_c = room.clients) === null || _c === void 0 ? void 0 : _c.length) === room.capacity) {
+    if (((_e = room.clients) === null || _e === void 0 ? void 0 : _e.length) === room.capacity) {
         // All clients have joined, so we can now generate and assign coins
         room.coins = generateCoins(room).map(coin => coin.id); //mapeamos a un arrays de ids de coins
         room.isActive = true; // The game starts now that all clients have joined and the coins have been generated

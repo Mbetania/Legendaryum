@@ -11,15 +11,15 @@ export const socketHandler = (io: Server) => {
   io.on('connection', (socket: Socket) => {
     console.log('A user connected with id', socket.id);
 
-    socket.on('authenticate', async (data: {userId:string, username:string}) =>{
-      const client = await authenticateClientById(data.userId, data.username);
+    socket.on('authenticate', async (data: {clientId:string, username:string}) =>{
+      const client = await authenticateClientById(data.clientId, data.username);
       // Store the mapping between socket.id and client.id
       socketToClientMap[socket.id] = client.id;
       socket.emit('authenticated', { token: client.token});
     })
 
-    socket.on('get client data', async(userId: string) =>{
-      const clientData = await getClientById(userId)
+    socket.on('get client data', async(clientId: string) =>{
+      const clientData = await getClientById(clientId)
       socket.emit('client data', clientData)
     })
 
@@ -33,34 +33,29 @@ export const socketHandler = (io: Server) => {
     });
 
     // When a client joins a room
-socket.on('join room', async (data: {roomId: string, userId: string}) => {
-  const client = await getClientById(data.userId);
-  if(client){
-    try {
-      const room = await joinRoom(data.roomId, client.id);
-      socket.to(data.roomId).emit('client joined', {clientId: client?.id});
-      console.log(`User ${socket.id} joined room ${room?.id}`);
-      socket.emit('joined room', {roomId: room?.id});
+  socket.on('join room', async (data: {roomId: string, clientId: string}) => {
+    const client = await getClientById(data.clientId);
+    if(client){
+      try {
+        const room = await joinRoom(data.roomId, client.id);
+        socket.to(data.roomId).emit('client joined', {clientId: client?.id});
+        console.log(`User ${socket.id} joined room ${room?.id}`);
+        socket.emit('joined room', {roomId: room?.id});
 
-      // Generar monedas para la sala
-      const updatedRoom = await generateCoinForRoom(data.roomId);
-      if (updatedRoom) {
-        // Emitir un evento con las monedas generadas
-        io.to(data.roomId).emit('coins generated', { coins: updatedRoom.coins });
+        // Check if the room is active and coins were generated
+        if (room && room.isActive && room.coins) {
+          // Emit the generated coins to the room
+          io.to(data.roomId).emit('coins generated', { coins: room.coins });
+        }
+      } catch (error) {
+        // Send an error message to the client
+        console.error('Error in joinRoom:', error);
+        socket.emit('error', {message: 'Unable to join room. Room is full.'});
       }
-
-    } catch (error) {
-      // Enviar un mensaje de error al cliente
-      console.error('Error in joinRoom:', error);
-      socket.emit('error', {message: 'Unable to join room. Room is full.'});
+    } else {
+      socket.emit('error', {message: 'Unable to join room. Client not found'})
     }
-  }else{
-    socket.emit('error', {message: 'Unable to join room. Client not found'})
-  }
   });
-
-
-
 
     // When a client grabs a coin
     socket.on('grabCoin', async ({ coinId, roomId, clientId }) => {

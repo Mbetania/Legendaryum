@@ -58,17 +58,25 @@ export const joinRoom = async (roomId: string, clientId: string): Promise<Room |
     throw new Error('Client is already in the room');
   }
 
+  // Verifica si la sala ha alcanzado su capacidad
+  if (room.clients?.length === room.capacity) {
+    throw new Error('Room is full');
+  }
+
   // Instead of storing the full client object, we just store the client ID
   room.clients?.push(clientId);
 
   // Generar y asignar monedas inmediatamente después de que un cliente se une a la sala
-  room.coins = generateCoins(room).map(coin => coin.id); //mapeamos a un arrays de ids de coins
-  room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
+  if (room.clients?.length === room.capacity) {
+    room.coins = generateCoins(room).map(coin => coin.id); //mapeamos a un arrays de ids de coins
+    room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
+  }
 
   await redisClient.set(`room:${roomId}`, JSON.stringify(room));
 
   return room;
 };
+
 
 export const generateCoinForRoom = async (roomId: string) : Promise<Room | null > =>{
   const roomData = await redisClient.get(`room:${roomId}`)

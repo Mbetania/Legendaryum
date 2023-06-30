@@ -8,7 +8,7 @@ export interface Client {
   status: ClientStatus;
   username: string;
   token: string;
-  coins?: string[];
+  coins: string[];
 }
 
 export enum ClientStatus {

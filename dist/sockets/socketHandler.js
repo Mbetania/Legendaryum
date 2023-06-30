@@ -8,7 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { Redis } from 'ioredis';
-import { createRoom, generateCoinForRoom, getRoomById, joinRoom } from '../services/roomService';
+import { createRoom, getRoomById, joinRoom } from '../services/roomService';
 import { authenticateClientById, getClientById } from '../services/clientService';
 import redisClient from '../services/redis';
 export let socketToClientMap = {};
@@ -17,13 +17,13 @@ export const socketHandler = (io) => {
     io.on('connection', (socket) => {
         console.log('A user connected with id', socket.id);
         socket.on('authenticate', (data) => __awaiter(void 0, void 0, void 0, function* () {
-            const client = yield authenticateClientById(data.userId, data.username);
+            const client = yield authenticateClientById(data.clientId, data.username);
             // Store the mapping between socket.id and client.id
             socketToClientMap[socket.id] = client.id;
             socket.emit('authenticated', { token: client.token });
         }));
-        socket.on('get client data', (userId) => __awaiter(void 0, void 0, void 0, function* () {
-            const clientData = yield getClientById(userId);
+        socket.on('get client data', (clientId) => __awaiter(void 0, void 0, void 0, function* () {
+            const clientData = yield getClientById(clientId);
             socket.emit('client data', clientData);
         }));
         socket.on('create room', (roomData) => __awaiter(void 0, void 0, void 0, function* () {
@@ -33,22 +33,21 @@ export const socketHandler = (io) => {
         }));
         // When a client joins a room
         socket.on('join room', (data) => __awaiter(void 0, void 0, void 0, function* () {
-            const client = yield getClientById(data.userId);
+            const client = yield getClientById(data.clientId);
             if (client) {
                 try {
                     const room = yield joinRoom(data.roomId, client.id);
                     socket.to(data.roomId).emit('client joined', { clientId: client === null || client === void 0 ? void 0 : client.id });
                     console.log(`User ${socket.id} joined room ${room === null || room === void 0 ? void 0 : room.id}`);
                     socket.emit('joined room', { roomId: room === null || room === void 0 ? void 0 : room.id });
-                    // Generar monedas para la sala
-                    const updatedRoom = yield generateCoinForRoom(data.roomId);
-                    if (updatedRoom) {
-                        // Emitir un evento con las monedas generadas
-                        io.to(data.roomId).emit('coins generated', { coins: updatedRoom.coins });
+                    // Check if the room is active and coins were generated
+                    if (room && room.isActive && room.coins) {
+                        // Emit the generated coins to the room
+                        io.to(data.roomId).emit('coins generated', { coins: room.coins });
                     }
                 }
                 catch (error) {
-                    // Enviar un mensaje de error al cliente
+                    // Send an error message to the client
                     console.error('Error in joinRoom:', error);
                     socket.emit('error', { message: 'Unable to join room. Room is full.' });
                 }
