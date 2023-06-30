@@ -37,10 +37,6 @@ export const getCoinById = (coinId) => __awaiter(void 0, void 0, void 0, functio
     }
     return null;
 });
-// export const getClientByUsername = async (username: string): Promise<Client | null> => {
-//   const clientData = await redisClient.get(`user:${username}`);
-//   return clientData ? JSON.parse(clientData) : null;
-// }
 export const authenticateClientById = (username, clientId) => __awaiter(void 0, void 0, void 0, function* () {
     let user = yield getClientById(clientId);
     if (!user) {
