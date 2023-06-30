@@ -1,7 +1,6 @@
 import express from 'express';
 import { HTTP_STATUS } from '../../../types/http';
-import { getCoinsOfUser } from '../coinService';
-import { getCoinsInRoom } from '../../../services/coinService';
+import { getCoinsInRoom, getCoinsOfUser } from '../../../services/coinService';
 
 const coinControllersRouter = express.Router();
 

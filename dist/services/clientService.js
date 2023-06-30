@@ -29,23 +29,14 @@ export const getClientById = (clientId) => __awaiter(void 0, void 0, void 0, fun
     }
     return null;
 });
-export const getCoinById = (coinId) => __awaiter(void 0, void 0, void 0, function* () {
-    const coinData = yield redisClient.get(`coins:${coinId}`);
-    if (coinData) {
-        const coin = JSON.parse(coinData);
-        return coin;
-    }
-    return null;
-});
-export const authenticateClientById = (username, clientId) => __awaiter(void 0, void 0, void 0, function* () {
-    let user = yield getClientById(clientId);
+export const authenticateClientById = (clientId) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = clientId || uuidv4();
+    let user = yield getClientById(id);
     if (!user) {
-        const id = uuidv4();
         const newClient = {
             id: id,
-            username: username,
             status: ClientStatus.PENDING,
-            token: generateToken({ id: id, username: username }),
+            token: generateToken({ id: id }),
             coins: [],
         };
         yield createClient(newClient);

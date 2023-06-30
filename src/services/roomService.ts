@@ -2,8 +2,8 @@ import redisClient from "./redis";
 import { Room } from "../types/room";
 import { v4 as uuidv4 } from 'uuid';
 import { getClientById } from "./clientService";
-import { generateCoins } from "../models/coins";
 import config from '../utils/readJSONConfig'
+import { generateCoins } from "./coinService";
 
 export const createRoom = async (room: Room): Promise<Room> => {
   room.id = uuidv4();
@@ -76,21 +76,6 @@ export const joinRoom = async (roomId: string, clientId: string): Promise<Room |
   return room;
 };
 
-
-export const generateCoinForRoom = async (roomId: string) : Promise<Room | null > =>{
-  const roomData = await redisClient.get(`room:${roomId}`)
-  if(!roomData){
-    return null;
-  }
-  const room: Room = JSON.parse(roomData)
-  if (room.clients?.length === room.capacity) {
-    // All clients have joined, so we can now generate and assign coins
-    room.coins = generateCoins(room)
-    room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
-  }
-  await redisClient.set(`room:${roomId}`, JSON.stringify(room))
-  return room;
-};
 
 // Resetear una sala después de un juego
 export const resetRoom = async (roomId: string): Promise<Room> => {

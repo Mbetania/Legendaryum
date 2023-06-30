@@ -40,7 +40,7 @@ usersRouter.post('/authenticate', async (req, res) => {
   const { username, clientId } = req.body;
 
   try {
-    const client = await authenticateClientById(clientId, username);
+    const client = await authenticateClientById(clientId);
     if (!client) {
       res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: 'Failed to authenticate user' });
     } else {

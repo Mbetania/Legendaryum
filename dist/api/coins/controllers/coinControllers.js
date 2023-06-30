@@ -9,8 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import express from 'express';
 import { HTTP_STATUS } from '../../../types/http';
-import { getCoinsOfUser } from '../coinService';
-import { getCoinsInRoom } from '../../../services/coinService';
+import { getCoinsInRoom, getCoinsOfUser } from '../../../services/coinService';
 const coinControllersRouter = express.Router();
 coinControllersRouter.get('/:userId/coins', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;

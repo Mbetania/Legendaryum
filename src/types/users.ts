@@ -1,13 +1,12 @@
 import express from "express";
 import { Redis } from "ioredis";
-import { Room} from "./room";
-import {  OwnedCoin } from "./coin";
+import { Room } from "./room";
+import { OwnedCoin } from "./coin";
 
 export interface Client {
   id: string;
   room?: Room;
   status: ClientStatus;
-  username: string;
   token: string;
   coins: OwnedCoin[];
 }
@@ -34,6 +33,5 @@ export interface AssociateCoinRequest extends express.Request {
 }
 
 export type User = {
-  username: string;
   id: string;
 };

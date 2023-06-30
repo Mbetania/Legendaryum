@@ -8,19 +8,22 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { Redis } from 'ioredis';
-import { createRoom, getRoomById, joinRoom } from '../services/roomService';
-import { authenticateClientById, getClientById, getCoinById } from '../services/clientService';
-import redisClient from '../services/redis';
+import { createRoom, joinRoom } from '../services/roomService';
+import { authenticateClientById, getClientById } from '../services/clientService';
+import { grabCoin } from '../services/coinService';
+import { v4 as uuidv4 } from 'uuid';
 export let socketToClientMap = {};
 export const socketHandler = (io) => {
     const redis = new Redis();
     io.on('connection', (socket) => {
         console.log('A user connected with id', socket.id);
         socket.on('authenticate', (data) => __awaiter(void 0, void 0, void 0, function* () {
-            const client = yield authenticateClientById(data.clientId, data.username);
+            // Si no se proporciona un clientId, se genera uno nuevo
+            const clientId = data.clientId || uuidv4();
+            const client = yield authenticateClientById(clientId);
             // Store the mapping between socket.id and client.id
             socketToClientMap[socket.id] = client.id;
-            socket.emit('authenticated', { token: client.token });
+            socket.emit('authenticated', { token: client.token, clientId: client.id });
         }));
         socket.on('get client data', (clientId) => __awaiter(void 0, void 0, void 0, function* () {
             const clientData = yield getClientById(clientId);
@@ -57,27 +60,15 @@ export const socketHandler = (io) => {
             }
         }));
         // When a client grabs a coin
-        socket.on('grabCoin', ({ coinId, roomId, clientId, position }) => __awaiter(void 0, void 0, void 0, function* () {
-            var _a, _b;
+        socket.on('grab coin', ({ roomId, clientId, coinId }) => __awaiter(void 0, void 0, void 0, function* () {
             console.log(`User ${clientId} grabbed coin ${coinId} in room ${roomId}`);
-            const client = yield getClientById(clientId);
-            const room = yield getRoomById(roomId);
-            if (client && room) {
-                // Associate the coin with the user
-                const { id, position } = (yield getCoinById(coinId)) || {};
-                console.log(id, position);
-                if (id && position) {
-                    (_a = client.coins) === null || _a === void 0 ? void 0 : _a.push({ id, position }); // Añade la moneda al cliente
-                }
-                yield redisClient.set(`client:${clientId}`, JSON.stringify(client)); // Almacena el cliente en Redis
-                // Remove the coin from the room
-                room.coins = (_b = room.coins) === null || _b === void 0 ? void 0 : _b.filter(id => id !== coinId);
-                yield redisClient.set(`room:${roomId}`, JSON.stringify(room)); // Actualiza la sala en Redis
-                // Emit coinUnavailable event to all other clients in the room
-                socket.to(roomId).emit('coinUnavailable', coinId);
+            try {
+                yield grabCoin(roomId, clientId, coinId);
+                socket.to(roomId).emit('coinUnaVailable', coinId);
             }
-            else {
-                socket.emit('error', { message: 'Unable to grab coin. Client or room not found' });
+            catch (error) {
+                console.error('Error in grab coin: ', error);
+                socket.emit('error', { message: 'Unable to grab coin' });
             }
         }));
         // When a client disconnects

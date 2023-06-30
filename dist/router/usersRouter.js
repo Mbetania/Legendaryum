@@ -44,7 +44,7 @@ usersRouter.get('/:clientId', (req, res) => __awaiter(void 0, void 0, void 0, fu
 usersRouter.post('/authenticate', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username, clientId } = req.body;
     try {
-        const client = yield authenticateClientById(clientId, username);
+        const client = yield authenticateClientById(clientId);
         if (!client) {
             res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: 'Failed to authenticate user' });
         }

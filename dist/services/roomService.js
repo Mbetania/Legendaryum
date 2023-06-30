@@ -10,8 +10,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import redisClient from "./redis";
 import { v4 as uuidv4 } from 'uuid';
 import { getClientById } from "./clientService";
-import { generateCoins } from "../models/coins";
 import config from '../utils/readJSONConfig';
+import { generateCoins } from "./coinService";
 export const createRoom = (room) => __awaiter(void 0, void 0, void 0, function* () {
     room.id = uuidv4();
     room.coinsAmount = config.coinsAmount;
@@ -64,21 +64,6 @@ export const joinRoom = (roomId, clientId) => __awaiter(void 0, void 0, void 0, 
     // Generar y asignar monedas inmediatamente después de que un cliente se une a la sala
     if (((_d = room.clients) === null || _d === void 0 ? void 0 : _d.length) === room.capacity) {
         room.coins = generateCoins(room); //mapeamos a un arrays de ids de coins
-        room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
-    }
-    yield redisClient.set(`room:${roomId}`, JSON.stringify(room));
-    return room;
-});
-export const generateCoinForRoom = (roomId) => __awaiter(void 0, void 0, void 0, function* () {
-    var _e;
-    const roomData = yield redisClient.get(`room:${roomId}`);
-    if (!roomData) {
-        return null;
-    }
-    const room = JSON.parse(roomData);
-    if (((_e = room.clients) === null || _e === void 0 ? void 0 : _e.length) === room.capacity) {
-        // All clients have joined, so we can now generate and assign coins
-        room.coins = generateCoins(room);
         room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
     }
     yield redisClient.set(`room:${roomId}`, JSON.stringify(room));

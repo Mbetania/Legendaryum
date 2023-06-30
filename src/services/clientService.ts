@@ -14,11 +14,11 @@ export const removeClient = async (client: Client): Promise<void> => {
   await redisClient.del(`client:${client.id}`);
 };
 
-export const getClientById = async(clientId: string): Promise<Client | null> => {
+export const getClientById = async (clientId: string): Promise<Client | null> => {
   const clientData = await redisClient.get(`client:${clientId}`);
-  if(clientData){
+  if (clientData) {
     const client = JSON.parse(clientData);
-    if(!client.coins){
+    if (!client.coins) {
       client.coins = []
     }
     return client;
@@ -26,29 +26,15 @@ export const getClientById = async(clientId: string): Promise<Client | null> => 
   return null;
 }
 
-export const getCoinById = async(coinId: string): Promise<Coin | null> => {
-  const coinData = await redisClient.get(`coins:${coinId}`);
-  if(coinData){
-    const coin = JSON.parse(coinData);
-    return coin;
-  }
-  return null
-}
+export const authenticateClientById = async (clientId: string): Promise<Client> => {
+  const id = clientId || uuidv4();
+  let user = await getClientById(id);
 
-
-
-
-
-export const authenticateClientById = async(username: string, clientId: string): Promise<Client> =>{
-  let user = await getClientById(clientId)
-
-  if(!user){
-    const id = uuidv4();
+  if (!user) {
     const newClient: Client = {
       id: id,
-      username: username,
       status: ClientStatus.PENDING,
-      token: generateToken({ id: id, username: username}),
+      token: generateToken({ id: id }),
       coins: [],
     };
     await createClient(newClient);
