@@ -63,7 +63,7 @@ export const joinRoom = (roomId, clientId) => __awaiter(void 0, void 0, void 0, 
     (_c = room.clients) === null || _c === void 0 ? void 0 : _c.push(clientId);
     // Generar y asignar monedas inmediatamente después de que un cliente se une a la sala
     if (((_d = room.clients) === null || _d === void 0 ? void 0 : _d.length) === room.capacity) {
-        room.coins = generateCoins(room); //mapeamos a un arrays de ids de coins
+        room.coins = yield generateCoins(room); //mapeamos a un arrays de ids de coins
         room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
     }
     yield redisClient.set(`room:${roomId}`, JSON.stringify(room));

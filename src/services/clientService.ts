@@ -1,8 +1,8 @@
 import redisClient from "./redis";
-import { Client, ClientStatus } from "../types/users";
 import { generateToken } from "./authService";
 import { v4 as uuidv4 } from 'uuid';
 import { Coin } from "../types/coin";
+import { Client, ClientStatus } from "../types/client";
 
 
 export const createClient = async (client: Client): Promise<void> => {
@@ -34,7 +34,7 @@ export const authenticateClientById = async (clientId: string): Promise<Client> 
     const newClient: Client = {
       id: id,
       status: ClientStatus.PENDING,
-      token: generateToken({ id: id }),
+      token: generateToken(id),
       coins: [],
     };
     await createClient(newClient);

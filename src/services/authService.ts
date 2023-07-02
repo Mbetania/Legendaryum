@@ -1,12 +1,10 @@
 import jwt from 'jsonwebtoken';
-import { User } from '../types/users';
 
 export const JWT_TOKEN = process.env.JWT_SECRET || 'fallback-secret-key';
 
-export const generateToken = (user: User): string => {
-  return jwt.sign({ id: user.id }, JWT_TOKEN, { expiresIn: '1h' });
+export const generateToken = (clientId: string): string => {
+  return jwt.sign({ id: clientId }, JWT_TOKEN, { expiresIn: '1h' });
 }
-
 
 export const verifyToken = (token: string): string | object => {
   try {

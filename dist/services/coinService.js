@@ -50,7 +50,7 @@ export const getCoin = (coinId, client) => __awaiter(void 0, void 0, void 0, fun
     return JSON.parse(coin);
 });
 // Genera una serie de monedas para una sala específica.
-export const generateCoins = (room) => {
+export const generateCoins = (room) => __awaiter(void 0, void 0, void 0, function* () {
     const coins = [];
     for (let i = 0; i < room.coinsAmount; i++) {
         const coin = {
@@ -64,9 +64,10 @@ export const generateCoins = (room) => {
             isCollected: false
         };
         coins.push(coin);
+        yield redisClient.set(`coins:${coin.id}`, JSON.stringify(coin));
     }
     return coins;
-};
+});
 export const getUserCoins = (clientId, client) => __awaiter(void 0, void 0, void 0, function* () {
     const coinIds = yield client.smembers(`client:${clientId}:coins`);
     return coinIds;
@@ -76,23 +77,23 @@ export const isCoinAssociatedToUser = (clientId, coinId, client) => __awaiter(vo
     return isMember === 1;
 });
 export const grabCoin = (roomId, clientId, coinId) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
         const coin = yield getCoinById(coinId);
         const room = yield getRoomById(roomId);
         const client = yield getClientById(clientId);
         if (!coin || !room || !client) {
             console.log(roomId, coinId, clientId);
-            throw new Error('Coin, room o client not found');
+            throw new Error('Coin, room or client not found');
         }
-        //associate coin with user
-        if (client.coins) {
+        // Mark the coin as collected
+        coin.isCollected = true;
+        yield redisClient.set(`coins:${coin.id}`, JSON.stringify(coin));
+        // Associate coin with user
+        if (!client.coins) {
             client.coins = [];
         }
         client.coins.push(coin);
         yield redisClient.set(`client:${clientId}`, JSON.stringify(client));
-        room.coins = (_a = room.coins) === null || _a === void 0 ? void 0 : _a.filter(coin => coin.id !== coinId);
-        yield redisClient.set(`room:${roomId}`, JSON.stringify(room));
     }
     catch (error) {
         console.error('Error in grabCoin: ', error);

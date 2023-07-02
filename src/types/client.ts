@@ -1,15 +1,15 @@
 import express from "express";
 import { Redis } from "ioredis";
-import { Room} from "./room";
+import { Room } from "./room";
+import { Coin } from "./coin";
 
 export interface Client {
   id: string;
   room?: Room;
   roomId?: string;
   status: ClientStatus;
-  username: string;
   token: string;
-  coins: string[];
+  coins: Coin[];
 }
 
 export enum ClientStatus {
@@ -19,14 +19,14 @@ export enum ClientStatus {
 
 export interface UserCoinsRequest extends express.Request {
   params: {
-    userId: string;
+    clientId: string;
   };
   redis: Redis;
 }
 
 export interface AssociateCoinRequest extends express.Request {
   params: {
-    userId: string;
+    clientId: string;
     coinId: string;
     room: string;
   };
@@ -34,6 +34,5 @@ export interface AssociateCoinRequest extends express.Request {
 }
 
 export type User = {
-  username: string;
   id: string;
 };

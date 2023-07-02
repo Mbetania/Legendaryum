@@ -54,7 +54,7 @@ export const getCoin = async (coinId: string, client: Redis): Promise<Coin> => {
 };
 
 // Genera una serie de monedas para una sala específica.
-export const generateCoins = (room: Room): Coin[] => {
+export const generateCoins = async (room: Room): Promise<Coin[]> => {
   const coins: Coin[] = [];
   for (let i = 0; i < room.coinsAmount; i++) {
     const coin: Coin = {
@@ -68,9 +68,12 @@ export const generateCoins = (room: Room): Coin[] => {
       isCollected: false
     };
     coins.push(coin);
+
+    await redisClient.set(`coins:${coin.id}`, JSON.stringify(coin));
   }
   return coins;
 }
+
 
 export const getUserCoins = async (clientId: string, client: Redis): Promise<string[]> => {
   const coinIds = await client.smembers(`client:${clientId}:coins`);
@@ -89,17 +92,19 @@ export const grabCoin = async (roomId: string, clientId: string, coinId: string)
     const client = await getClientById(clientId)
     if (!coin || !room || !client) {
       console.log(roomId, coinId, clientId)
-      throw new Error('Coin, room o client not found')
+      throw new Error('Coin, room or client not found')
     }
-    //associate coin with user
-    if (client.coins) {
+    // Mark the coin as collected
+    coin.isCollected = true;
+    await redisClient.set(`coins:${coin.id}`, JSON.stringify(coin));
+
+    // Associate coin with user
+    if (!client.coins) {
       client.coins = [];
     }
-    client.coins.push(coin)
+    client.coins.push(coin);
     await redisClient.set(`client:${clientId}`, JSON.stringify(client));
 
-    room.coins = room.coins?.filter(coin => coin.id !== coinId);
-    await redisClient.set(`room:${roomId}`, JSON.stringify(room));
   } catch (error) {
     console.error('Error in grabCoin: ', error)
     throw error;

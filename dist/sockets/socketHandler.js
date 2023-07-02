@@ -18,10 +18,8 @@ export const socketHandler = (io) => {
     io.on('connection', (socket) => {
         console.log('A user connected with id', socket.id);
         socket.on('authenticate', (data) => __awaiter(void 0, void 0, void 0, function* () {
-            // Si no se proporciona un clientId, se genera uno nuevo
             const clientId = data.clientId || uuidv4();
             const client = yield authenticateClientById(clientId);
-            // Store the mapping between socket.id and client.id
             socketToClientMap[socket.id] = client.id;
             socket.emit('authenticated', { token: client.token, clientId: client.id });
         }));
@@ -32,25 +30,21 @@ export const socketHandler = (io) => {
         socket.on('create room', (roomData) => __awaiter(void 0, void 0, void 0, function* () {
             const room = Object.assign({}, roomData);
             const createdRoom = yield createRoom(room);
-            socket.emit('room created', { id: createdRoom.id });
+            io.emit('room created', { id: createdRoom.id });
         }));
-        // When a client joins a room
         socket.on('join room', (data) => __awaiter(void 0, void 0, void 0, function* () {
             const client = yield getClientById(data.clientId);
             if (client) {
                 try {
                     const room = yield joinRoom(data.roomId, client.id);
-                    socket.to(data.roomId).emit('client joined', { clientId: client === null || client === void 0 ? void 0 : client.id });
+                    io.to(data.roomId).emit('client joined', { clientId: client === null || client === void 0 ? void 0 : client.id });
                     console.log(`User ${socket.id} joined room ${room === null || room === void 0 ? void 0 : room.id}`);
                     socket.emit('joined room', { roomId: room === null || room === void 0 ? void 0 : room.id });
-                    // Check if the room is active and coins were generated
                     if (room && room.isActive && room.coins) {
-                        // Emit the generated coins to the room
                         io.to(data.roomId).emit('coins generated', { coins: room.coins });
                     }
                 }
                 catch (error) {
-                    // Send an error message to the client
                     console.error('Error in joinRoom:', error);
                     socket.emit('error', { message: 'Unable to join room. Room is full.' });
                 }
@@ -59,19 +53,17 @@ export const socketHandler = (io) => {
                 socket.emit('error', { message: 'Unable to join room. Client not found' });
             }
         }));
-        // When a client grabs a coin
         socket.on('grab coin', ({ roomId, clientId, coinId }) => __awaiter(void 0, void 0, void 0, function* () {
             console.log(`User ${clientId} grabbed coin ${coinId} in room ${roomId}`);
             try {
                 yield grabCoin(roomId, clientId, coinId);
-                socket.to(roomId).emit('coinUnaVailable', coinId);
+                io.to(roomId).emit('coinUnaVailable', coinId);
             }
             catch (error) {
                 console.error('Error in grab coin: ', error);
                 socket.emit('error', { message: 'Unable to grab coin' });
             }
         }));
-        // When a client disconnects
         socket.on('disconnect', () => {
             console.log('A user disconnected', socket.id);
             delete socketToClientMap[socket.id];

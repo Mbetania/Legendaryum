@@ -1,5 +1,4 @@
 import { io, Socket } from 'socket.io-client';
-import { grabCoin } from './services/coinService';
 import { Coin } from './types/coin';
 
 const URL = 'http://localhost:3000';
@@ -31,24 +30,16 @@ const main = async () => {
           if (i === 0) {
             const roomData = { name: 'testroom', password: 'testpassword' };
             socket.emit('create room', roomData);
-
-            socket.on('room created', (room) => {
-              console.log('Sala creada: ', room);
-
-              const joinData = { roomId: room.id, clientId: clientId };
-              socket.emit('join room', joinData);
-
-              joinRoomAndGrabCoin(socket, room, clientId);
-            });
-          } else {
-            // El segundo cliente espera a que el primer cliente cree la sala, luego se une.
-            socket.on('room created', (room) => {
-              const joinData = { roomId: room.id, clientId: clientId };
-              socket.emit('join room', joinData);
-
-              joinRoomAndGrabCoin(socket, room, clientId);
-            });
           }
+
+          socket.on('room created', (room) => {
+            console.log('Sala creada: ', room);
+
+            const joinData = { roomId: room.id, clientId: clientId };
+            socket.emit('join room', joinData);
+
+            joinRoomAndGrabCoin(socket, room, clientId);
+          });
         });
       });
 
@@ -62,30 +53,37 @@ const main = async () => {
     });
   }
 };
-function joinRoomAndGrabCoin(socket: string, roomId: string, clientId: string) {
+
+function joinRoomAndGrabCoin(socket: Socket, room: any, clientId: string) {
   let coins: Coin[] = [];
 
   socket.on('joined room', (joinedRoom) => {
     console.log('Unido a la sala: ', joinedRoom);
+  });
 
-    socket.on('coins generated', (data: { coins: Coin[] }) => {
-      console.log('Monedas generadas: ', data);
-      coins = data.coins;
+  socket.on('coins generated', (data: { coins: Coin[] }) => {
+    console.log('Monedas generadas: ', data);
+    coins = data.coins;
 
-      if (coins.length > 0) {
-        const coinToGrab = coins[0];
-        const grabCoinData = {
-          coinId: coinToGrab.id,
-          roomId: roomId,  // Use roomId directly
-          clientId: clientId,
-        };
-        socket.emit('grab coin', grabCoinData);
-        socket.on('coin grabbed', (data) => {
-          console.log(`Moneda agarrada: ${data.coinId} por el cliente: ${data.clientId}`);
-        });
-      }
-    });
+    if (coins.length > 0) {
+      const coinToGrab = coins[0];
+      const grabCoinData = {
+        coinId: coinToGrab.id,
+        roomId: room.id,
+        clientId: clientId,
+      };
+      socket.emit('grab coin', grabCoinData);
+    }
+  });
+
+  socket.on('coinUnaVailable', (coinId) => {
+    console.log(`Moneda recogida por otro cliente: ${coinId}`);
+    coins = coins.filter(coin => coin.id !== coinId);
+  });
+
+  socket.on('coin grabbed', (data) => {
+    console.log(`Moneda agarrada: ${data.coinId} por el cliente: ${data.clientId}`);
   });
 }
 
-main()
+main();

@@ -67,7 +67,7 @@ export const joinRoom = async (roomId: string, clientId: string): Promise<Room |
 
   // Generar y asignar monedas inmediatamente después de que un cliente se une a la sala
   if (room.clients?.length === room.capacity) {
-    room.coins = generateCoins(room); //mapeamos a un arrays de ids de coins
+    room.coins = await generateCoins(room); //mapeamos a un arrays de ids de coins
     room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
   }
 
