@@ -7,7 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { createRoom, joinRoom } from '../services/roomService';
+import { createRoom, getRoomById, joinRoom } from '../services/roomService';
 import { authenticateClientById, getClientById } from '../services/clientService';
 import { grabCoin, isCoinAssociatedToUser } from '../services/coinService';
 import { v4 as uuidv4 } from 'uuid';
@@ -28,7 +28,7 @@ export const socketHandler = (io) => {
         socket.on('create room', (roomData) => __awaiter(void 0, void 0, void 0, function* () {
             const room = Object.assign({}, roomData);
             const createdRoom = yield createRoom(room);
-            io.emit('room created', { id: createdRoom.id });
+            io.emit('room created', createdRoom); // Cambiado a enviar toda la sala creada
         }));
         socket.on('join room', (data) => __awaiter(void 0, void 0, void 0, function* () {
             const client = yield getClientById(data.clientId);
@@ -37,7 +37,7 @@ export const socketHandler = (io) => {
                     const room = yield joinRoom(data.roomId, client.id);
                     io.to(data.roomId).emit('client joined', { clientId: client === null || client === void 0 ? void 0 : client.id });
                     console.log(`User ${socket.id} joined room ${room === null || room === void 0 ? void 0 : room.id}`);
-                    socket.emit('joined room', { roomId: room === null || room === void 0 ? void 0 : room.id });
+                    socket.emit('joined room', room); // Cambiado a enviar toda la sala unida
                     if (room && room.isActive && room.coins) {
                         io.to(data.roomId).emit('coins generated', { coins: room.coins });
                     }
@@ -55,11 +55,17 @@ export const socketHandler = (io) => {
             console.log(`User ${clientId} grabbed coin ${coinId} in room ${roomId}`);
             try {
                 const coinGrabbed = yield isCoinAssociatedToUser(clientId, coinId);
-                if (!coinGrabbed) {
-                    yield grabCoin(roomId, clientId, coinId);
-                    io.to(roomId).emit('coinUnaVailable', coinId);
-                    io.to(roomId).emit('coin grabbed', { coinId: coinId, clientId: clientId });
-                    // Enviar un evento 'end game' a todos los clientes de la sala
+                if (coinGrabbed) {
+                    socket.emit('error', { message: 'Coin has already been grabbed' });
+                    return;
+                }
+                yield grabCoin(roomId, clientId, coinId);
+                io.to(roomId).emit('coinUnaVailable', coinId);
+                io.to(roomId).emit('coin grabbed', { coinId: coinId, clientId: clientId });
+                const updatedRoom = yield getRoomById(roomId);
+                io.to(roomId).emit('room updated', updatedRoom);
+                // Comprobación adicional: si no quedan monedas, termina el juego.
+                if (updatedRoom && (!updatedRoom.coins || updatedRoom.coins.length === 0)) {
                     io.to(roomId).emit('end game');
                 }
             }

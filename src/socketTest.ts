@@ -1,9 +1,12 @@
 import { io, Socket } from 'socket.io-client';
 import { Coin } from './types/coin';
+import { Room } from './types/room';
 
 const URL = 'http://localhost:3000';
 let sockets: Socket[] = [];
 let clientIds: string[] = ['client1', 'client2'];  // Creas dos clientIds únicos
+
+let clientRooms: { [clientId: string]: Room } = {}; // Almacena la sala actual de cada cliente
 
 const main = async () => {
   for (let i = 0; i < 2; i++) {
@@ -32,15 +35,28 @@ const main = async () => {
             socket.emit('create room', roomData);
           }
 
-          socket.on('room created', (room) => {
+          socket.on('room created', (room: Room) => {
             console.log('Sala creada: ', room);
+            clientRooms[clientId] = room;  // Actualiza la sala en el estado del cliente
 
             const joinData = { roomId: room.id, clientId: clientId };
             socket.emit('join room', joinData);
+          });
 
-            joinRoomAndGrabCoin(socket, room, clientId);
+          socket.on('joined room', (joinedRoom: Room) => {
+            console.log('Unido a la sala: ', joinedRoom);
+            clientRooms[clientId] = joinedRoom; // Actualiza la sala en el estado del cliente
+
+            joinRoomAndGrabCoin(socket, joinedRoom, clientId);
           });
         });
+      });
+
+      socket.on('room updated', (updatedRoom: Room) => {
+        console.log('La sala ha sido actualizada: ', updatedRoom);
+
+        // Actualiza la sala en el estado del cliente
+        clientRooms[clientId] = updatedRoom;
       });
 
       socket.on('disconnect', () => {
@@ -54,13 +70,13 @@ const main = async () => {
   }
 };
 
-function joinRoomAndGrabCoin(socket: Socket, room: any, clientId: string) {
+function joinRoomAndGrabCoin(socket: Socket, room: Room, clientId: string) {
   let coins: Coin[] = [];
 
   socket.on('joined room', (joinedRoom) => {
     console.log('Unido a la sala: ', joinedRoom);
   });
-  console.log()
+
   socket.on('coins generated', (data: { coins: Coin[] }) => {
     console.log('Monedas generadas: ', data);
     coins = data.coins;
@@ -78,22 +94,8 @@ function joinRoomAndGrabCoin(socket: Socket, room: any, clientId: string) {
 
   socket.on('coinUnaVailable', (coinId) => {
     console.log(`Moneda recogida por otro cliente: ${coinId}`);
-    coins = coins.filter(coin => coin.id !== coinId);
+    coins = coins.filter(coin => coin.id !== coinId); // Actualiza la lista de monedas
   });
-
-  socket.on('coin grabbed', (data) => {
-    console.log(`Moneda agarrada: ${data.coinId} por el cliente: ${data.clientId}`);
-
-    if (data.clientId === clientId) {
-      console.log('El cliente ha agarrado una moneda. Desconectando...');
-      socket.disconnect();
-    }
-  });
-  socket.on('end game', () => {
-    console.log('Juego terminado. Desconectando...');
-    socket.disconnect();
-  });
-
 }
 
 main();

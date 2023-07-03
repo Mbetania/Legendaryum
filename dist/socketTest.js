@@ -11,6 +11,7 @@ import { io } from 'socket.io-client';
 const URL = 'http://localhost:3000';
 let sockets = [];
 let clientIds = ['client1', 'client2']; // Creas dos clientIds únicos
+let clientRooms = {}; // Almacena la sala actual de cada cliente
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     for (let i = 0; i < 2; i++) {
         let socket = io(URL);
@@ -33,11 +34,21 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
                     }
                     socket.on('room created', (room) => {
                         console.log('Sala creada: ', room);
+                        clientRooms[clientId] = room; // Actualiza la sala en el estado del cliente
                         const joinData = { roomId: room.id, clientId: clientId };
                         socket.emit('join room', joinData);
-                        joinRoomAndGrabCoin(socket, room, clientId);
+                    });
+                    socket.on('joined room', (joinedRoom) => {
+                        console.log('Unido a la sala: ', joinedRoom);
+                        clientRooms[clientId] = joinedRoom; // Actualiza la sala en el estado del cliente
+                        joinRoomAndGrabCoin(socket, joinedRoom, clientId);
                     });
                 });
+            });
+            socket.on('room updated', (updatedRoom) => {
+                console.log('La sala ha sido actualizada: ', updatedRoom);
+                // Actualiza la sala en el estado del cliente
+                clientRooms[clientId] = updatedRoom;
             });
             socket.on('disconnect', () => {
                 console.log('Desconectado del servidor.');
@@ -68,18 +79,7 @@ function joinRoomAndGrabCoin(socket, room, clientId) {
     });
     socket.on('coinUnaVailable', (coinId) => {
         console.log(`Moneda recogida por otro cliente: ${coinId}`);
-        coins = coins.filter(coin => coin.id !== coinId);
-    });
-    socket.on('coin grabbed', (data) => {
-        console.log(`Moneda agarrada: ${data.coinId} por el cliente: ${data.clientId}`);
-        if (data.clientId === clientId) {
-            console.log('El cliente ha agarrado una moneda. Desconectando...');
-            socket.disconnect();
-        }
-    });
-    socket.on('end game', () => {
-        console.log('Juego terminado. Desconectando...');
-        socket.disconnect();
+        coins = coins.filter(coin => coin.id !== coinId); // Actualiza la lista de monedas
     });
 }
 main();
