@@ -60,7 +60,7 @@ function joinRoomAndGrabCoin(socket: Socket, room: any, clientId: string) {
   socket.on('joined room', (joinedRoom) => {
     console.log('Unido a la sala: ', joinedRoom);
   });
-
+  console.log()
   socket.on('coins generated', (data: { coins: Coin[] }) => {
     console.log('Monedas generadas: ', data);
     coins = data.coins;
@@ -83,7 +83,17 @@ function joinRoomAndGrabCoin(socket: Socket, room: any, clientId: string) {
 
   socket.on('coin grabbed', (data) => {
     console.log(`Moneda agarrada: ${data.coinId} por el cliente: ${data.clientId}`);
+
+    if (data.clientId === clientId) {
+      console.log('El cliente ha agarrado una moneda. Desconectando...');
+      socket.disconnect();
+    }
   });
+  socket.on('end game', () => {
+    console.log('Juego terminado. Desconectando...');
+    socket.disconnect();
+  });
+
 }
 
 main();

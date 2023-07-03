@@ -9,7 +9,9 @@
     "build": "tsc && copyfiles \"src/*.json\" dist",
     "dev": "tsc -w",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "socket": "node --experimental-specifier-resolution=node  ./src/script.js"
+    "socket": "node --experimental-specifier-resolution=node  ./src/socketTest.js",
+    "socketTest": "node  ./dist/socketTest.js",
+    "buildAndTest": "npm run build && npm run socketTest"
   },
   "keywords": [],
   "author": "",

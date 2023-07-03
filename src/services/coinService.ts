@@ -7,10 +7,10 @@ import { getClientById } from './clientService';
 import { getRoomById } from './roomService';
 
 export const getCoinsOfUser = async (clientId: string) => {
-  const coinIds = await getUserCoins(clientId, redisClient);
+  const coinIds = await getUserCoinsIds(clientId);
   const coins: Coin[] = [];
   for (let id of coinIds) {
-    const coin = await getCoin(id, redisClient);
+    const coin = await getCoinById(id);
     if (!coin) {
       console.error(`Coin with id ${id} does not exist`);
       continue;
@@ -37,21 +37,12 @@ export const getCoinsInRoom = async (room: string): Promise<Coin[]> => {
     throw new Error(`No coins found in room ${room}`);
   }
 
-  const coins = await Promise.all(coinIds.map(coinId => getCoin(coinId, redisClient)));
+  const coins = await Promise.all(coinIds.map(coinId => getCoinById(coinId)));
 
   console.log(`Retrieved ${coins.length} coins from room ${room}`);
-  return coins;
+  return coins.filter((coin): coin is Coin => coin !== null);
 };
 
-export const getCoin = async (coinId: string, client: Redis): Promise<Coin> => {
-  const coin = await client.get(`coin:${coinId}`);
-
-  if (!coin) {
-    throw new Error(`Coin with id ${coinId} does not exist`);
-  }
-
-  return JSON.parse(coin);
-};
 
 // Genera una serie de monedas para una sala específica.
 export const generateCoins = async (room: Room): Promise<Coin[]> => {
@@ -75,13 +66,13 @@ export const generateCoins = async (room: Room): Promise<Coin[]> => {
 }
 
 
-export const getUserCoins = async (clientId: string, client: Redis): Promise<string[]> => {
-  const coinIds = await client.smembers(`client:${clientId}:coins`);
+export const getUserCoinsIds = async (clientId: string): Promise<string[]> => {
+  const coinIds = await redisClient.smembers(`client:${clientId}:coins`);
   return coinIds;
 };
 
-export const isCoinAssociatedToUser = async (clientId: string, coinId: string, client: Redis): Promise<boolean> => {
-  const isMember = await client.sismember(`client:${clientId}:coins`, coinId);
+export const isCoinAssociatedToUser = async (clientId: string, coinId: string): Promise<boolean> => {
+  const isMember = await redisClient.sismember(`client:${clientId}:coins`, coinId);
   return isMember === 1;
 };
 
@@ -105,9 +96,23 @@ export const grabCoin = async (roomId: string, clientId: string, coinId: string)
     client.coins.push(coin);
     await redisClient.set(`client:${clientId}`, JSON.stringify(client));
 
+    // Remove coin from room
+    await removeCoinFromRoom(roomId, coin.id)
+
   } catch (error) {
     console.error('Error in grabCoin: ', error)
     throw error;
   }
 
 }
+
+export const removeCoinFromRoom = async (roomId: string, coinId: string) => {
+  const room = await getRoomById(roomId);
+  if (!room) {
+    throw new Error('Room not found');
+  }
+
+  room.coins = room.coins?.filter((coin) => coin.id !== coinId);
+
+  await redisClient.set(`room:${roomId}`, JSON.stringify(room));
+};

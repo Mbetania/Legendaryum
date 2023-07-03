@@ -12,10 +12,10 @@ import redisClient from "./redis";
 import { getClientById } from './clientService';
 import { getRoomById } from './roomService';
 export const getCoinsOfUser = (clientId) => __awaiter(void 0, void 0, void 0, function* () {
-    const coinIds = yield getUserCoins(clientId, redisClient);
+    const coinIds = yield getUserCoinsIds(clientId);
     const coins = [];
     for (let id of coinIds) {
-        const coin = yield getCoin(id, redisClient);
+        const coin = yield getCoinById(id);
         if (!coin) {
             console.error(`Coin with id ${id} does not exist`);
             continue;
@@ -38,16 +38,9 @@ export const getCoinsInRoom = (room) => __awaiter(void 0, void 0, void 0, functi
     if (!coinIds.length) {
         throw new Error(`No coins found in room ${room}`);
     }
-    const coins = yield Promise.all(coinIds.map(coinId => getCoin(coinId, redisClient)));
+    const coins = yield Promise.all(coinIds.map(coinId => getCoinById(coinId)));
     console.log(`Retrieved ${coins.length} coins from room ${room}`);
-    return coins;
-});
-export const getCoin = (coinId, client) => __awaiter(void 0, void 0, void 0, function* () {
-    const coin = yield client.get(`coin:${coinId}`);
-    if (!coin) {
-        throw new Error(`Coin with id ${coinId} does not exist`);
-    }
-    return JSON.parse(coin);
+    return coins.filter((coin) => coin !== null);
 });
 // Genera una serie de monedas para una sala específica.
 export const generateCoins = (room) => __awaiter(void 0, void 0, void 0, function* () {
@@ -68,12 +61,12 @@ export const generateCoins = (room) => __awaiter(void 0, void 0, void 0, functio
     }
     return coins;
 });
-export const getUserCoins = (clientId, client) => __awaiter(void 0, void 0, void 0, function* () {
-    const coinIds = yield client.smembers(`client:${clientId}:coins`);
+export const getUserCoinsIds = (clientId) => __awaiter(void 0, void 0, void 0, function* () {
+    const coinIds = yield redisClient.smembers(`client:${clientId}:coins`);
     return coinIds;
 });
-export const isCoinAssociatedToUser = (clientId, coinId, client) => __awaiter(void 0, void 0, void 0, function* () {
-    const isMember = yield client.sismember(`client:${clientId}:coins`, coinId);
+export const isCoinAssociatedToUser = (clientId, coinId) => __awaiter(void 0, void 0, void 0, function* () {
+    const isMember = yield redisClient.sismember(`client:${clientId}:coins`, coinId);
     return isMember === 1;
 });
 export const grabCoin = (roomId, clientId, coinId) => __awaiter(void 0, void 0, void 0, function* () {
@@ -94,9 +87,20 @@ export const grabCoin = (roomId, clientId, coinId) => __awaiter(void 0, void 0, 
         }
         client.coins.push(coin);
         yield redisClient.set(`client:${clientId}`, JSON.stringify(client));
+        // Remove coin from room
+        yield removeCoinFromRoom(roomId, coin.id);
     }
     catch (error) {
         console.error('Error in grabCoin: ', error);
         throw error;
     }
+});
+export const removeCoinFromRoom = (roomId, coinId) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const room = yield getRoomById(roomId);
+    if (!room) {
+        throw new Error('Room not found');
+    }
+    room.coins = (_a = room.coins) === null || _a === void 0 ? void 0 : _a.filter((coin) => coin.id !== coinId);
+    yield redisClient.set(`room:${roomId}`, JSON.stringify(room));
 });

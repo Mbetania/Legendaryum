@@ -3,13 +3,12 @@ import { Redis } from 'ioredis';
 import { createRoom, getRoomById, joinRoom } from '../services/roomService';
 import { authenticateClientById, getClientById } from '../services/clientService';
 import redisClient from '../services/redis';
-import { grabCoin } from '../services/coinService';
+import { grabCoin, isCoinAssociatedToUser } from '../services/coinService';
 import { v4 as uuidv4 } from 'uuid';
 
 export let socketToClientMap: { [socketId: string]: string } = {};
 
 export const socketHandler = (io: Server) => {
-  const redis = new Redis();
   io.on('connection', (socket: Socket) => {
     console.log('A user connected with id', socket.id);
 
@@ -58,17 +57,19 @@ export const socketHandler = (io: Server) => {
     socket.on('grab coin', async ({ roomId, clientId, coinId }) => {
       console.log(`User ${clientId} grabbed coin ${coinId} in room ${roomId}`);
       try {
-        await grabCoin(roomId, clientId, coinId);
-        io.to(roomId).emit('coinUnaVailable', coinId);
+        const coinGrabbed = await isCoinAssociatedToUser(clientId, coinId);
+        if (!coinGrabbed) {
+          await grabCoin(roomId, clientId, coinId);
+          io.to(roomId).emit('coinUnaVailable', coinId);
+          io.to(roomId).emit('coin grabbed', { coinId: coinId, clientId: clientId });
+
+          // Enviar un evento 'end game' a todos los clientes de la sala
+          io.to(roomId).emit('end game');
+        }
       } catch (error) {
         console.error('Error in grab coin: ', error)
         socket.emit('error', { message: 'Unable to grab coin' })
       }
-    });
-
-    socket.on('disconnect', () => {
-      console.log('A user disconnected', socket.id);
-      delete socketToClientMap[socket.id]
     });
   });
 }

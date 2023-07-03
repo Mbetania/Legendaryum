@@ -72,6 +72,14 @@ function joinRoomAndGrabCoin(socket, room, clientId) {
     });
     socket.on('coin grabbed', (data) => {
         console.log(`Moneda agarrada: ${data.coinId} por el cliente: ${data.clientId}`);
+        if (data.clientId === clientId) {
+            console.log('El cliente ha agarrado una moneda. Desconectando...');
+            socket.disconnect();
+        }
+    });
+    socket.on('end game', () => {
+        console.log('Juego terminado. Desconectando...');
+        socket.disconnect();
     });
 }
 main();

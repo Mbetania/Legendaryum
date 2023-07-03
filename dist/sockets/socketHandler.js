@@ -7,14 +7,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { Redis } from 'ioredis';
 import { createRoom, joinRoom } from '../services/roomService';
 import { authenticateClientById, getClientById } from '../services/clientService';
-import { grabCoin } from '../services/coinService';
+import { grabCoin, isCoinAssociatedToUser } from '../services/coinService';
 import { v4 as uuidv4 } from 'uuid';
 export let socketToClientMap = {};
 export const socketHandler = (io) => {
-    const redis = new Redis();
     io.on('connection', (socket) => {
         console.log('A user connected with id', socket.id);
         socket.on('authenticate', (data) => __awaiter(void 0, void 0, void 0, function* () {
@@ -56,17 +54,19 @@ export const socketHandler = (io) => {
         socket.on('grab coin', ({ roomId, clientId, coinId }) => __awaiter(void 0, void 0, void 0, function* () {
             console.log(`User ${clientId} grabbed coin ${coinId} in room ${roomId}`);
             try {
-                yield grabCoin(roomId, clientId, coinId);
-                io.to(roomId).emit('coinUnaVailable', coinId);
+                const coinGrabbed = yield isCoinAssociatedToUser(clientId, coinId);
+                if (!coinGrabbed) {
+                    yield grabCoin(roomId, clientId, coinId);
+                    io.to(roomId).emit('coinUnaVailable', coinId);
+                    io.to(roomId).emit('coin grabbed', { coinId: coinId, clientId: clientId });
+                    // Enviar un evento 'end game' a todos los clientes de la sala
+                    io.to(roomId).emit('end game');
+                }
             }
             catch (error) {
                 console.error('Error in grab coin: ', error);
                 socket.emit('error', { message: 'Unable to grab coin' });
             }
         }));
-        socket.on('disconnect', () => {
-            console.log('A user disconnected', socket.id);
-            delete socketToClientMap[socket.id];
-        });
     });
 };
