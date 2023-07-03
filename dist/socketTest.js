@@ -10,8 +10,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { io } from 'socket.io-client';
 const URL = 'http://localhost:3000';
 let sockets = [];
-let clientIds = ['client1', 'client2']; // Creas dos clientIds únicos
-let clientRooms = {}; // Almacena la sala actual de cada cliente
+let clientIds = ['client1', 'client2'];
+let room = null;
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     for (let i = 0; i < 2; i++) {
         let socket = io(URL);
@@ -19,36 +19,34 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         let clientId = clientIds[i];
         socket.on('connect', () => {
             console.log('Conectado al servidor.');
-            const authData = { clientId: clientId, username: 'testuser' };
-            socket.emit('authenticate', authData);
             socket.on('authenticated', (data) => {
                 console.log('Autenticado: ', data);
                 clientId = data.clientId;
-                socket.emit('get client data', clientId);
-                socket.on('client data', (clientData) => {
-                    console.log('Datos del cliente recibidos: ', clientData);
-                    // Sólo el primer cliente crea la sala.
-                    if (i === 0) {
-                        const roomData = { name: 'testroom', password: 'testpassword' };
-                        socket.emit('create room', roomData);
-                    }
-                    socket.on('room created', (room) => {
-                        console.log('Sala creada: ', room);
-                        clientRooms[clientId] = room; // Actualiza la sala en el estado del cliente
-                        const joinData = { roomId: room.id, clientId: clientId };
-                        socket.emit('join room', joinData);
-                    });
-                    socket.on('joined room', (joinedRoom) => {
-                        console.log('Unido a la sala: ', joinedRoom);
-                        clientRooms[clientId] = joinedRoom; // Actualiza la sala en el estado del cliente
-                        joinRoomAndGrabCoin(socket, joinedRoom, clientId);
-                    });
+                socket.on('room created', (createdRoom) => {
+                    console.log('Cliente:', clientId, 'recibió evento "room created"');
+                    console.log('Sala creada: ', createdRoom);
+                    room = createdRoom;
+                    const joinData = { roomId: room.id, clientId: clientId };
+                    socket.emit('join room', joinData);
                 });
+                socket.on('joined room', (joinedRoom) => {
+                    console.log('Cliente:', clientId, 'recibió evento "joined room"');
+                    console.log('Unido a la sala: ', JSON.stringify(joinedRoom, null, 2));
+                    joinRoomAndGrabCoin(socket, joinedRoom, clientId);
+                });
+                if (i === 0) {
+                    const roomData = { name: 'testroom', password: 'testpassword' };
+                    socket.emit('create room', roomData);
+                }
+            });
+            const authData = { clientId: clientId, username: 'testuser' };
+            socket.emit('authenticate', authData);
+            socket.on('client data', (clientData) => {
+                console.log('Datos del cliente recibidos: ', clientData);
             });
             socket.on('room updated', (updatedRoom) => {
                 console.log('La sala ha sido actualizada: ', updatedRoom);
-                // Actualiza la sala en el estado del cliente
-                clientRooms[clientId] = updatedRoom;
+                room = updatedRoom;
             });
             socket.on('disconnect', () => {
                 console.log('Desconectado del servidor.');
@@ -59,11 +57,8 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
 });
-function joinRoomAndGrabCoin(socket, room, clientId) {
+function joinRoomAndGrabCoin(socket, joinedRoom, clientId) {
     let coins = [];
-    socket.on('joined room', (joinedRoom) => {
-        console.log('Unido a la sala: ', joinedRoom);
-    });
     socket.on('coins generated', (data) => {
         console.log('Monedas generadas: ', data);
         coins = data.coins;
@@ -71,15 +66,11 @@ function joinRoomAndGrabCoin(socket, room, clientId) {
             const coinToGrab = coins[0];
             const grabCoinData = {
                 coinId: coinToGrab.id,
-                roomId: room.id,
+                roomId: joinedRoom.id,
                 clientId: clientId,
             };
             socket.emit('grab coin', grabCoinData);
         }
-    });
-    socket.on('coinUnaVailable', (coinId) => {
-        console.log(`Moneda recogida por otro cliente: ${coinId}`);
-        coins = coins.filter(coin => coin.id !== coinId); // Actualiza la lista de monedas
     });
 }
 main();
