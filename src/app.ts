@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import usersRouter from './router/usersRouter'
+import clientRouter from './router/clientRouter'
 import { socketHandler } from "./sockets/socketHandler";
 import roomsRouter from "./router/roomsRouter";
 
@@ -20,7 +20,7 @@ const io = new Server(httpServer, {
   }
 });
 
-app.use('/users', usersRouter);
+app.use('/api/client', clientRouter);
 app.use('/rooms', roomsRouter);
 
 socketHandler(io)

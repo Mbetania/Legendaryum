@@ -26,7 +26,14 @@ export const getRoomById = async (roomId: string): Promise<Room | null> => {
     return null;
   }
 
-  let room = JSON.parse(roomData);
+  let room;
+  try {
+    room = JSON.parse(roomData);
+
+  } catch (error) {
+    console.error('Error parsing roomData: ', error);
+    throw error
+  }
 
   // We get the full client data using the stored client IDs
   if (room.clients) {

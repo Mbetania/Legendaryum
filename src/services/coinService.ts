@@ -23,7 +23,13 @@ export const getCoinsOfUser = async (clientId: string) => {
 export const getCoinById = async (coinId: string): Promise<Coin | null> => {
   const coinData = await redisClient.get(`coins:${coinId}`);
   if (coinData) {
-    const coin = JSON.parse(coinData);
+    let coin;
+    try {
+      coin = JSON.parse(coinData);
+    } catch (error) {
+      console.error('Error parsing coinData: ', error);
+      throw error;
+    }
     return coin;
   }
   return null

@@ -17,7 +17,12 @@ export const removeClient = async (client: Client): Promise<void> => {
 export const getClientById = async (clientId: string): Promise<Client | null> => {
   const clientData = await redisClient.get(`client:${clientId}`);
   if (clientData) {
-    const client = JSON.parse(clientData);
+    let client;
+    try {
+      client = JSON.parse(clientData);
+    } catch (error) {
+      console.error('Error parsing client data: ', error)
+    }
     if (!client.coins) {
       client.coins = []
     }

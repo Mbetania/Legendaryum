@@ -4,14 +4,14 @@ import { getCoinsInRoom, getCoinsOfUser } from '../../../services/coinService';
 
 const coinControllersRouter = express.Router();
 
-coinControllersRouter.get('/:userId/coins', async (req, res, next) => {
-  const { userId } = req.params;
-  if (!userId) {
+coinControllersRouter.get('/:clientId/coins', async (req, res, next) => {
+  const { clientId } = req.params;
+  if (!clientId) {
     return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'userId is required' });
   }
 
   try {
-    const coins = await getCoinsOfUser(userId);
+    const coins = await getCoinsOfUser(clientId);
     if (coins.length === 0) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({ error: 'No coins found for this user' });
     }
