@@ -1,6 +1,5 @@
-import express, { Request, Response } from "express";
+import { Request, Response } from "express";
 import * as clientService from '../../services/clientService';
-import { Client } from "../../types/client";
 import { HTTP_STATUS } from "../../types/http";
 
 //* GET
