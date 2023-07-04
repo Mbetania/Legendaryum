@@ -1,8 +1,8 @@
 import express from 'express';
-import coinControllersRouter from '../api/coins/controllers/coinControllers';
+import * as coinController from '../api/coins/controllers'
 
 const coinRouter = express.Router();
 
-coinRouter.use('/coins', coinControllersRouter);
+coinRouter.get('/coins', coinController.getCoinsOfUserController);
 
 export default coinRouter;

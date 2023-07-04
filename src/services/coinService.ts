@@ -6,7 +6,7 @@ import redisClient from "./redis";
 import { getClientById } from './clientService';
 import { getRoomById } from './roomService';
 
-export const getCoinsOfUser = async (clientId: string) => {
+export const getCoinsOfUser = async (clientId: string): Promise<Coin[]> => {
   const coinIds = await getUserCoinsIds(clientId);
   const coins: Coin[] = [];
   for (let id of coinIds) {
