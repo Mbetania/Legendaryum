@@ -3,6 +3,7 @@ import * as clientService from '../../services/clientService';
 import { Client } from "../../types/client";
 import { HTTP_METHODS, HTTP_STATUS } from "../../types/http";
 
+//* GET
 export const getClientById = async (req: Request, res: Response) => {
   const clientId = req.params.clientId;
   const client = await clientService.getClientById(clientId)
@@ -13,4 +14,11 @@ export const getClientById = async (req: Request, res: Response) => {
       res.status(HTTP_STATUS.BAD_REQUEST).send('Client not found')
     }
   }
+}
+
+//* POST
+export const createClient = async (req: Request, res: Response) => {
+  const client = req.body;
+  await clientService.createClient(client);
+  res.status(HTTP_STATUS.CREATED).send('Client created')
 }
