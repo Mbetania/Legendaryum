@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import { HTTP_STATUS } from '../../types/http';
 import * as coinService from '../../services/coinService';
+import { getRoomById } from '../../services/roomService';
+import { getClientById } from '../../services/clientService';
 
 
-export const getCoinsOfUserController = async (req: Request, res: Response): Promise<void> => {
+export const getCoinsOfUser = async (req: Request, res: Response): Promise<void> => {
   const clientId = req.params.clientId;
 
   try {
@@ -11,6 +13,106 @@ export const getCoinsOfUserController = async (req: Request, res: Response): Pro
     res.json(coins);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' });
+  }
+}
+
+export const getCoinById = async (req: Request, res: Response) => {
+  const coinId = req.params.coinId;
+  try {
+    const coins = await coinService.getCoinById(coinId)
+    res.json(coins);
+  } catch (error) {
+    console.error(error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({ message: 'Internal server error' })
+  }
+}
+
+export const getCoinsInRoom = async (req: Request, res: Response) => {
+  const roomId = req.params.roomId;
+  try {
+    const coins = await coinService.getCoinsInRoom(roomId);
+    res.json(coins);
+  } catch (error) {
+    console.error(error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' })
+  }
+}
+
+export const isCoinAssociatedToUser = async (req: Request, res: Response) => {
+  const clientId = req.params.clientId;
+  const coinId = req.params.coinId;
+  try {
+    const client = await getClientById(clientId);
+    if (!client) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Client not found' });
+    }
+    const coin = await coinService.getCoinById(coinId);
+    if (!coin) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Coin not found' });
+    }
+    const isAssociated = await coinService.isCoinAssociatedToUser(clientId, coinId);
+    res.json(isAssociated);
+  } catch (error) {
+    console.error(error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internat server error' });
+  }
+}
+
+
+export const generateCoins = async (req: Request, res: Response) => {
+  const roomId = req.params.roomId
+  try {
+    const room = await getRoomById(roomId);
+    if (!room) {
+      res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Room not found' });
+      return;
+    }
+    const coins = await coinService.generateCoins(room);
+    res.json(coins);
+  } catch (error) {
+    console.error(error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' });
+  }
+}
+
+export const grabCoin = async (req: Request, res: Response) => {
+  const { roomId, coinId, clientId } = req.params;
+  try {
+    const room = await getRoomById(roomId);
+    const coin = await coinService.getCoinById(coinId);
+    const client = await getClientById(clientId)
+    if (!room) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'room not found' });
+    } else if (!coin) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'coin not found' });
+    } else if (!client) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'client not found' });
+    }
+    await coinService.grabCoin(roomId, coinId, clientId);
+    res.json({ message: 'coin grabbed successfully' });
+  } catch (error) {
+    console.error(error)
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' });
+  }
+}
+
+export const removeCoinFromRoom = async (req: Request, res: Response) => {
+  const { roomId, coinId } = req.params;
+
+  try {
+    const room = await getRoomById(roomId);
+    const coin = await coinService.getCoinById(coinId);
+
+    if (!room) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'room not found' });
+    } else if (!coin) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'coin not found' });
+    }
+    await coinService.removeCoinFromRoom(roomId, coinId);
+    res.json({ message: 'coin remove succesfully from te room' })
+  } catch (error) {
+    console.error(error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' });
   }
 }
