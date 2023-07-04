@@ -5,5 +5,6 @@ const clientRouter = express.Router();
 
 clientRouter.get('/:clientId', clientController.getClientById);
 clientRouter.post('/', clientController.createClient)
+clientRouter.post('/authenticate/:clientId', clientController.authenticateClientById)
 
 export default clientRouter;

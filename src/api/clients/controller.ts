@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import * as clientService from '../../services/clientService';
 import { Client } from "../../types/client";
-import { HTTP_METHODS, HTTP_STATUS } from "../../types/http";
+import { HTTP_STATUS } from "../../types/http";
 
 //* GET
 export const getClientById = async (req: Request, res: Response) => {
@@ -21,4 +21,10 @@ export const createClient = async (req: Request, res: Response) => {
   const client = req.body;
   await clientService.createClient(client);
   res.status(HTTP_STATUS.CREATED).send('Client created')
+}
+
+export const authenticateClientById = async (req: Request, res: Response) => {
+  const clientId = req.params.clientId;
+  const client = await clientService.authenticateClientById(clientId)
+  res.json(client);
 }
