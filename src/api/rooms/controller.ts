@@ -15,13 +15,14 @@ export const createRoom = async (req: Request, res: Response) => {
 
 export const getRoomById = async (req: Request, res: Response) => {
   const roomId = req.params.roomId;
-  const room = await roomService.getRoomById(roomId);
 
   try {
+    const room = await roomService.getRoomById(roomId);
+
     if (!room) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({ message: "room not found" });
     } else {
-      return res.status(HTTP_STATUS.OK).json()
+      return res.status(HTTP_STATUS.OK).json(room)
     }
   } catch (error) {
     console.error(error);

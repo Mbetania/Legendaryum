@@ -5,15 +5,14 @@ import { HTTP_STATUS } from "../../types/http";
 //* GET
 export const getClientById = async (req: Request, res: Response) => {
   const clientId = req.params.clientId;
-  const client = await clientService.getClientById(clientId)
-  if (client) {
-    try {
-      res.json(client)
-    } catch (error) {
-      res.status(HTTP_STATUS.BAD_REQUEST).send('Client not found')
-    }
+  try {
+    const client = await clientService.getClientById(clientId)
+    res.json(client)
+  } catch (error) {
+    res.status(HTTP_STATUS.NOT_FOUND).send('Client not found')
   }
 };
+
 
 //* POST
 export const createClient = async (req: Request, res: Response) => {

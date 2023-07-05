@@ -12,16 +12,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { getClientById } from "./clientService";
 import config from '../utils/readJSONConfig';
 import { generateCoins } from "./coinService";
-export const createRoom = (room) => __awaiter(void 0, void 0, void 0, function* () {
-    room.id = uuidv4();
-    room.coinsAmount = config.coinsAmount;
-    room.scale = config.scale;
-    room.capacity = config.capacity;
-    room.clients = [];
-    room.coins = [];
-    room.isActive = false;
-    const roomData = JSON.stringify(room);
-    yield redisClient.set(`room:${room.id}`, roomData);
+export const createRoom = (roomData) => __awaiter(void 0, void 0, void 0, function* () {
+    const room = Object.assign({ id: uuidv4(), coinsAmount: config.coinsAmount, scale: config.scale, capacity: config.capacity, clients: [], coins: [], isActive: false }, roomData);
+    const roomString = JSON.stringify(room);
+    yield redisClient.set(`room:${room.id}`, roomString);
     return room;
 });
 export const getRoomById = (roomId) => __awaiter(void 0, void 0, void 0, function* () {
@@ -29,7 +23,14 @@ export const getRoomById = (roomId) => __awaiter(void 0, void 0, void 0, functio
     if (!roomData) {
         return null;
     }
-    let room = JSON.parse(roomData);
+    let room;
+    try {
+        room = JSON.parse(roomData);
+    }
+    catch (error) {
+        console.error('Error parsing roomData: ', error);
+        throw error;
+    }
     // We get the full client data using the stored client IDs
     if (room.clients) {
         const clients = [];
@@ -48,7 +49,7 @@ export const joinRoom = (roomId, clientId) => __awaiter(void 0, void 0, void 0, 
     var _a, _b, _c, _d;
     const roomData = yield redisClient.get(`room:${roomId}`);
     if (!roomData) {
-        return null;
+        throw new Error("room not found");
     }
     const room = JSON.parse(roomData);
     // Verifica si el cliente ya está en la sala

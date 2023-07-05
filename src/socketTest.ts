@@ -42,7 +42,7 @@ const main = async () => {
       });
 
       const authData = { clientId: clientId, username: 'testuser' };
-      socket.emit('authenticate', authData);
+      socket.emit('authenticate', { clientId: clientId });
 
       socket.on('client data', (clientData) => {
         console.log('Datos del cliente recibidos: ', clientData);

@@ -38,9 +38,10 @@ export const getClientById = async (clientId: string): Promise<Client> => {
 
 export const authenticateClientById = async (clientId: string): Promise<Client> => {
   const id = clientId || uuidv4();
-  let user = await getClientById(id);
-
-  if (!user) {
+  let user;
+  try {
+    user = await getClientById(id);
+  } catch (error) {
     const newClient: Client = {
       id: id,
       status: ClientStatus.PENDING,
@@ -48,8 +49,7 @@ export const authenticateClientById = async (clientId: string): Promise<Client> 
       coins: [],
     };
     await createClient(newClient);
-    user = newClient
+    user = newClient;
   }
-
   return user;
 }

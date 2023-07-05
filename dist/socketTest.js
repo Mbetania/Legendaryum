@@ -40,7 +40,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
                 }
             });
             const authData = { clientId: clientId, username: 'testuser' };
-            socket.emit('authenticate', authData);
+            socket.emit('authenticate', { clientId: clientId });
             socket.on('client data', (clientData) => {
                 console.log('Datos del cliente recibidos: ', clientData);
             });

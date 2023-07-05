@@ -11,9 +11,10 @@ import express from "express";
 import cors from "cors";
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import usersRouter from './router/usersRouter';
+import clientRouter from './router/clientRouter';
 import { socketHandler } from "./sockets/socketHandler";
 import roomsRouter from "./router/roomsRouter";
+import coinRouter from "./router/coinsRouter";
 const app = express();
 const port = 3000;
 app.use(cors());
@@ -25,8 +26,9 @@ const io = new Server(httpServer, {
         methods: ["GET", "POST"]
     }
 });
-app.use('/users', usersRouter);
-app.use('/rooms', roomsRouter);
+app.use('/api', clientRouter);
+app.use('/api', roomsRouter);
+app.use('/api', coinRouter);
 socketHandler(io);
 function init() {
     return __awaiter(this, void 0, void 0, function* () {

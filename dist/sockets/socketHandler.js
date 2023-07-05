@@ -26,8 +26,7 @@ export const socketHandler = (io) => {
             socket.emit('client data', clientData);
         }));
         socket.on('create room', (roomData) => __awaiter(void 0, void 0, void 0, function* () {
-            const room = Object.assign({}, roomData);
-            const createdRoom = yield createRoom(room);
+            const createdRoom = yield createRoom(roomData);
             // Aquí obtenemos el clientId asociado con el socket actual
             const clientId = socketToClientMap[socket.id];
             if (clientId) {

@@ -4,7 +4,7 @@ import * as coinController from '../api/coins/controllers'
 const coinRouter = express.Router();
 
 coinRouter.get('/client/:clientId/coins', coinController.getCoinsOfUser);
-coinRouter.get('/client/:clientId/coins/:coinId', coinController.getCoinById);
+coinRouter.get('/coins/:coinId', coinController.getCoinById);
 coinRouter.get('/room/:roomId/coins', coinController.getCoinsInRoom);
 
 coinRouter.post('/room/:roomId/coins', coinController.generateCoins);
