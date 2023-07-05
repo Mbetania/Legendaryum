@@ -14,22 +14,27 @@ export const removeClient = async (client: Client): Promise<void> => {
   await redisClient.del(`client:${client.id}`);
 };
 
-export const getClientById = async (clientId: string): Promise<Client | null> => {
+export const getClientById = async (clientId: string): Promise<Client> => {
   const clientData = await redisClient.get(`client:${clientId}`);
-  if (clientData) {
-    let client;
-    try {
-      client = JSON.parse(clientData);
-    } catch (error) {
-      console.error('Error parsing client data: ', error)
-    }
-    if (!client.coins) {
-      client.coins = []
-    }
-    return client;
+
+  if (!clientData) {
+    throw new Error("client not found");
   }
-  return null;
-}
+
+  let client;
+  try {
+    client = JSON.parse(clientData);
+  } catch (error) {
+    console.error('Error parsing client data: ', error)
+  }
+
+  if (!client.coins) {
+    client.coins = []
+  }
+
+  return client;
+};
+
 
 export const authenticateClientById = async (clientId: string): Promise<Client> => {
   const id = clientId || uuidv4();

@@ -4,18 +4,22 @@ import { v4 as uuidv4 } from 'uuid';
 import { getClientById } from "./clientService";
 import config from '../utils/readJSONConfig'
 import { generateCoins } from "./coinService";
+import { error } from "console";
 
-export const createRoom = async (room: Room): Promise<Room> => {
-  room.id = uuidv4();
-  room.coinsAmount = config.coinsAmount;
-  room.scale = config.scale;
-  room.capacity = config.capacity;
-  room.clients = [];
-  room.coins = [];
-  room.isActive = false;
+export const createRoom = async (roomData?: Partial<Room>): Promise<Room> => {
+  const room: Room = {
+    id: uuidv4(),
+    coinsAmount: config.coinsAmount,
+    scale: config.scale,
+    capacity: config.capacity,
+    clients: [],
+    coins: [],
+    isActive: false,
+    ...roomData,
+  }
 
-  const roomData = JSON.stringify(room)
-  await redisClient.set(`room:${room.id}`, roomData);
+  const roomString = JSON.stringify(room)
+  await redisClient.set(`room:${room.id}`, roomString);
   return room;
 };
 
@@ -54,7 +58,7 @@ export const getRoomById = async (roomId: string): Promise<Room | null> => {
 export const joinRoom = async (roomId: string, clientId: string): Promise<Room | null> => {
   const roomData = await redisClient.get(`room:${roomId}`);
   if (!roomData) {
-    return null;
+    throw new Error("room not found");
   }
 
   const room: Room = JSON.parse(roomData);

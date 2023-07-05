@@ -15,7 +15,7 @@ export const getCoinsOfUser = async (req: Request, res: Response): Promise<void>
     console.error(error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' });
   }
-}
+};
 
 export const getCoinById = async (req: Request, res: Response) => {
   const coinId = req.params.coinId;
@@ -26,7 +26,7 @@ export const getCoinById = async (req: Request, res: Response) => {
     console.error(error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({ message: 'Internal server error' })
   }
-}
+};
 
 export const getCoinsInRoom = async (req: Request, res: Response) => {
   const roomId = req.params.roomId;
@@ -37,7 +37,7 @@ export const getCoinsInRoom = async (req: Request, res: Response) => {
     console.error(error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' })
   }
-}
+};
 
 export const isCoinAssociatedToUser = async (req: Request, res: Response) => {
   const clientId = req.params.clientId;
@@ -57,7 +57,7 @@ export const isCoinAssociatedToUser = async (req: Request, res: Response) => {
     console.error(error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internat server error' });
   }
-}
+};
 
 
 export const generateCoins = async (req: Request, res: Response) => {
@@ -74,7 +74,7 @@ export const generateCoins = async (req: Request, res: Response) => {
     console.error(error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' });
   }
-}
+};
 
 export const grabCoin = async (req: Request, res: Response) => {
   const { roomId, coinId, clientId } = req.params;
@@ -95,7 +95,7 @@ export const grabCoin = async (req: Request, res: Response) => {
     console.error(error)
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' });
   }
-}
+};
 
 export const removeCoinFromRoom = async (req: Request, res: Response) => {
   const { roomId, coinId } = req.params;
@@ -115,4 +115,4 @@ export const removeCoinFromRoom = async (req: Request, res: Response) => {
     console.error(error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' });
   }
-}
+};

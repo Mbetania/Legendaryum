@@ -5,6 +5,7 @@ import { Server } from 'socket.io';
 import clientRouter from './router/clientRouter'
 import { socketHandler } from "./sockets/socketHandler";
 import roomsRouter from "./router/roomsRouter";
+import coinRouter from "./router/coinsRouter";
 
 const app = express();
 const port = 3000;
@@ -20,9 +21,9 @@ const io = new Server(httpServer, {
   }
 });
 
-app.use('/api/client', clientRouter);
-app.use('/rooms', roomsRouter);
-
+app.use('/api', clientRouter);
+app.use('/api', roomsRouter);
+app.use('/api', coinRouter)
 socketHandler(io)
 
 async function init() {

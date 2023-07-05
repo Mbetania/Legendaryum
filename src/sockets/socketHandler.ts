@@ -3,6 +3,7 @@ import { createRoom, getRoomById, joinRoom } from '../services/roomService';
 import { authenticateClientById, getClientById } from '../services/clientService';
 import { generateCoins, grabCoin, isCoinAssociatedToUser } from '../services/coinService';
 import { v4 as uuidv4 } from 'uuid';
+import { Room } from '../types/room';
 
 export let socketToClientMap: { [socketId: string]: string } = {};
 
@@ -23,11 +24,8 @@ export const socketHandler = (io: Server) => {
     });
 
     socket.on('create room', async (roomData) => {
-      const room = {
-        ...roomData,
-      };
 
-      const createdRoom = await createRoom(room);
+      const createdRoom = await createRoom(roomData);
 
       // Aquí obtenemos el clientId asociado con el socket actual
       const clientId = socketToClientMap[socket.id];
