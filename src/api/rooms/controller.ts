@@ -10,14 +10,7 @@ import { Room } from "../../types/room";
 
 export const createRoom = async (req: Request, res: Response) => {
   try {
-    // Crear una nueva sala con un ID generado y la configuración predeterminada.
-    const room = {
-      id: uuidv4(),
-      capacity: config.capacity,
-      coinsAmount: config.coinsAmount,
-      scale: config.scale
-    };
-    await redisClient.set(`room:${room.id}`, JSON.stringify(room));
+    const room = await roomService.createRoom();
     res.json(room);
   } catch (error) {
     console.error(error);
@@ -25,50 +18,39 @@ export const createRoom = async (req: Request, res: Response) => {
   }
 };
 
+export const getRoomById = async (req: Request, res: Response) => {
+  const { roomId } = req.params;
 
-export const getRoomById = async (roomId: string): Promise<Room | null> => {
-  const roomData = await redisClient.get(`room:${roomId}`);
-  if (!roomData) {
-    throw new Error('Room not found');
-  }
-
-  let room;
   try {
-    room = JSON.parse(roomData);
+    const room = await roomService.getRoomById(roomId);
+    res.json(room);
   } catch (error) {
-    console.error('Error parsing roomData: ', error);
-    throw error
+    console.error(error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' });
   }
-
-  return room;
 };
-
 
 export const joinRoom = async (req: Request, res: Response) => {
   const { roomId } = req.params;
   const { clientId } = req.body;
 
   try {
-    const client = await getClientById(clientId);
-    if (!client) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'client not found' });
-    }
-
-    const updateRoom = await roomService.joinRoom(roomId, clientId);
-    res.status(HTTP_STATUS.OK).json(updateRoom);
+    const updatedRoom = await roomService.joinRoom(roomId, clientId);
+    res.json(updatedRoom);
   } catch (error) {
     console.error(error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: "internal server error" });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: "Internal server error" });
   }
 };
 
 export const resetRoom = async (req: Request, res: Response) => {
   const { roomId } = req.params;
+
   try {
     const room = await roomService.resetRoom(roomId);
-    return res.status(HTTP_STATUS.OK).json({ room });
+    res.json(room);
   } catch (error) {
     console.error(error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: "internal server error" })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: "Internal server error" });
   }
-}
+};

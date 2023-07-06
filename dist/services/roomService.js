@@ -9,7 +9,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import redisClient from "./redis";
 import { v4 as uuidv4 } from 'uuid';
-import { getClientById } from "./clientService";
 import config from '../utils/readJSONConfig';
 import { generateCoins } from "./coinService";
 export const createRoom = (roomData) => __awaiter(void 0, void 0, void 0, function* () {
@@ -30,17 +29,6 @@ export const getRoomById = (roomId) => __awaiter(void 0, void 0, void 0, functio
     catch (error) {
         console.error('Error parsing roomData: ', error);
         throw error;
-    }
-    // We get the full client data using the stored client IDs
-    if (room.clients) {
-        const clients = [];
-        for (let clientId of room.clients) {
-            const clientData = yield getClientById(clientId);
-            if (clientData) {
-                clients.push(clientData);
-            }
-        }
-        room.clients = clients;
     }
     return room;
 });
