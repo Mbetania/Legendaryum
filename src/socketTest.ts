@@ -1,10 +1,11 @@
 import { io, Socket } from 'socket.io-client';
 import { Coin } from './types/coin';
 import { Room } from './types/room';
+import { v4 as uuidv4 } from 'uuid';
 
 const URL = 'http://localhost:3000';
 let sockets: Socket[] = [];
-let clientIds: string[] = ['client1', 'client2'];
+let clientIds: string[] = [uuidv4(), uuidv4()];
 let room: Room | null = null;
 
 const main = async () => {

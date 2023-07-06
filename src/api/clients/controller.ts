@@ -1,6 +1,11 @@
 import { Request, Response } from "express";
 import * as clientService from "../../services/clientService";
 import { HTTP_STATUS } from "../../types/http";
+import redisClient from "../../services/redis";
+import { v4 as uuidv4 } from 'uuid';
+import { generateToken } from "../../services/authService";
+import { ClientStatus } from "../../types/client";
+
 
 //* GET
 export const getClientById = async (req: Request, res: Response) => {
@@ -16,13 +21,25 @@ export const getClientById = async (req: Request, res: Response) => {
 
 //* POST
 export const createClient = async (req: Request, res: Response) => {
-  const client = req.body;
-  await clientService.createClient(client);
-  res.status(HTTP_STATUS.CREATED).send('Client created')
+  try {
+    const id = uuidv4();
+    const client = {
+      id: id,
+      status: ClientStatus.PENDING,
+      token: generateToken(id),
+      coins: [],
+    };
+    await redisClient.set(`client:${client.id}`, JSON.stringify(client));
+    res.json(client);
+  } catch (error) {
+    console.error(error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' });
+  }
 };
 
+
 export const authenticateClientById = async (req: Request, res: Response) => {
-  const clientId = req.params.clientId;
+  const clientId = req.body.clientId;
   const client = await clientService.authenticateClientById(clientId)
   res.json(client);
 };

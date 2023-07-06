@@ -77,25 +77,22 @@ export const generateCoins = async (req: Request, res: Response) => {
 };
 
 export const grabCoin = async (req: Request, res: Response) => {
-  const { roomId, coinId, clientId } = req.params;
+  const { roomId, clientId } = req.params;
+  const { coinId } = req.body;
+
   try {
-    const room = await getRoomById(roomId);
-    const coin = await coinService.getCoinById(coinId);
-    const client = await getClientById(clientId)
-    if (!room) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'room not found' });
-    } else if (!coin) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'coin not found' });
-    } else if (!client) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'client not found' });
-    }
-    await coinService.grabCoin(roomId, coinId, clientId);
-    res.json({ message: 'coin grabbed successfully' });
+    await coinService.grabCoin(roomId, clientId, coinId);
+    res.status(HTTP_STATUS.OK).send({ message: 'Coin successfully collected.' });
   } catch (error) {
-    console.error(error)
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' });
+    console.error('Error in coinController grabCoin: ', error);
+    if (error instanceof Error && error.message === `Coin with id ${coinId} has already been collected.`) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).send({ message: error.message });
+    }
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({ message: 'An error occurred while collecting the coin.' });
   }
 };
+
+
 
 export const removeCoinFromRoom = async (req: Request, res: Response) => {
   const { roomId, coinId } = req.params;

@@ -21,7 +21,7 @@ export const createRoom = (roomData) => __awaiter(void 0, void 0, void 0, functi
 export const getRoomById = (roomId) => __awaiter(void 0, void 0, void 0, function* () {
     const roomData = yield redisClient.get(`room:${roomId}`);
     if (!roomData) {
-        return null;
+        throw new Error('Room not found');
     }
     let room;
     try {

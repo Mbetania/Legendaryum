@@ -7,7 +7,7 @@ export interface Scale {
   z: number;
 }
 
-export interface Room{
+export interface Room {
   id: string;
   coinsAmount: number;
   scale: Scale;

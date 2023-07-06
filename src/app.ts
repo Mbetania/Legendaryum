@@ -21,9 +21,9 @@ const io = new Server(httpServer, {
   }
 });
 
-app.use('/api', clientRouter);
-app.use('/api', roomsRouter);
-app.use('/api', coinRouter)
+app.use('/api/client', clientRouter);
+app.use('/api/room', roomsRouter);
+app.use('/api/coin', coinRouter)
 socketHandler(io)
 
 async function init() {

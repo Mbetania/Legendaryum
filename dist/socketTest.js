@@ -8,9 +8,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { io } from 'socket.io-client';
+import { v4 as uuidv4 } from 'uuid';
 const URL = 'http://localhost:3000';
 let sockets = [];
-let clientIds = ['client1', 'client2'];
+let clientIds = [uuidv4(), uuidv4()];
 let room = null;
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     for (let i = 0; i < 2; i++) {

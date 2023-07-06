@@ -1,6 +1,5 @@
 import { Coin } from '../types/coin';
 import { v4 as uuidv4 } from 'uuid';
-import { Redis } from 'ioredis';
 import { Room } from '../types/room';
 import redisClient from "./redis";
 import { getClientById } from './clientService';
@@ -20,7 +19,7 @@ export const getCoinsOfUser = async (clientId: string): Promise<Coin[]> => {
   return coins;
 };
 
-export const getCoinById = async (coinId: string): Promise<Coin | null> => {
+export const getCoinById = async (coinId: string): Promise<Coin> => {
   const coinData = await redisClient.get(`coins:${coinId}`);
   if (coinData) {
     let coin;
@@ -32,7 +31,7 @@ export const getCoinById = async (coinId: string): Promise<Coin | null> => {
     }
     return coin;
   }
-  return null
+  throw new Error('Coin not found');
 }
 
 export const getCoinsInRoom = async (room: string): Promise<Coin[]> => {
@@ -67,15 +66,16 @@ export const generateCoins = async (room: Room): Promise<Coin[]> => {
     coins.push(coin);
 
     await redisClient.set(`coins:${coin.id}`, JSON.stringify(coin));
+    await redisClient.sadd(`room:${room.id}:coins`, coin.id);
   }
+
+  room.coins = coins.map(coin => ({ id: coin.id, position: coin.position, ttl: coin.ttl, isCollected: coin.isCollected }));
+  await redisClient.set(`room:${room.id}`, JSON.stringify(room));
+
   return coins;
 }
 
 
-export const getUserCoinsIds = async (clientId: string): Promise<string[]> => {
-  const coinIds = await redisClient.smembers(`client:${clientId}:coins`);
-  return coinIds;
-};
 
 export const isCoinAssociatedToUser = async (clientId: string, coinId: string): Promise<boolean> => {
   const isMember = await redisClient.sismember(`client:${clientId}:coins`, coinId);
@@ -86,31 +86,41 @@ export const grabCoin = async (roomId: string, clientId: string, coinId: string)
   try {
     const coin = await getCoinById(coinId);
     const room = await getRoomById(roomId);
-    const client = await getClientById(clientId)
-    if (!coin || !room || !client) {
-      console.log(roomId, coinId, clientId)
-      throw new Error('Coin, room or client not found')
+    const client = await getClientById(clientId);
+
+    if (!coin) {
+      throw new Error(`Coin with id ${coinId} not found.`);
     }
-    // Mark the coin as collected
+    if (!room) {
+      throw new Error(`Room with id ${roomId} not found.`);
+    }
+    if (!client) {
+      throw new Error(`Client with id ${clientId} not found.`);
+    }
+
+    if (coin.isCollected) {
+      throw new Error(`Coin with id ${coinId} has already been collected.`);
+    }
+
     coin.isCollected = true;
     await redisClient.set(`coins:${coin.id}`, JSON.stringify(coin));
+    await redisClient.sadd(`client:${clientId}:coins`, coin.id);
 
-    // Associate coin with user
-    if (!client.coins) {
-      client.coins = [];
-    }
-    client.coins.push(coin);
-    await redisClient.set(`client:${clientId}`, JSON.stringify(client));
-
-    // Remove coin from room
     await removeCoinFromRoom(roomId, coin.id)
-
   } catch (error) {
     console.error('Error in grabCoin: ', error)
     throw error;
   }
-
 }
+
+
+
+
+export const getUserCoinsIds = async (clientId: string): Promise<string[]> => {
+  const coinIds = await redisClient.smembers(`client:${clientId}:coins`);
+  return coinIds;
+};
+
 
 export const removeCoinFromRoom = async (roomId: string, coinId: string) => {
   const room = await getRoomById(roomId);

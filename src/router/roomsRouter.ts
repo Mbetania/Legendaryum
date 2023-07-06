@@ -4,9 +4,13 @@ import * as roomController from '../api/rooms/controller';
 
 const roomsRouter = express.Router();
 
-roomsRouter.get('/room/:roomId', roomController.getRoomById);
-roomsRouter.post('/room/', roomController.createRoom);
-roomsRouter.patch('/join/:roomId', roomController.joinRoom);
-roomsRouter.patch('/reset/:roomId', roomController.resetRoom)
+roomsRouter.get('/:roomId', roomController.getRoomById);
+//! error createRoom
+roomsRouter.post('/', roomController.createRoom);
+//! error joinRoom
+roomsRouter.patch('/:roomId/join', roomController.joinRoom);
+
+roomsRouter.patch('/:roomId/reset', roomController.resetRoom);
+
 
 export default roomsRouter;

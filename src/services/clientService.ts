@@ -16,24 +16,20 @@ export const removeClient = async (client: Client): Promise<void> => {
 
 export const getClientById = async (clientId: string): Promise<Client> => {
   const clientData = await redisClient.get(`client:${clientId}`);
-
-  if (!clientData) {
-    throw new Error("client not found");
+  if (clientData) {
+    let client;
+    try {
+      client = JSON.parse(clientData);
+    } catch (error) {
+      console.error('Error parsing clientData: ', error);
+      throw error;
+    }
+    return client;
   }
+  console.error(`Client with id ${clientId} not found.`);
+  throw new Error('Client not found');
+}
 
-  let client;
-  try {
-    client = JSON.parse(clientData);
-  } catch (error) {
-    console.error('Error parsing client data: ', error)
-  }
-
-  if (!client.coins) {
-    client.coins = []
-  }
-
-  return client;
-};
 
 
 export const authenticateClientById = async (clientId: string): Promise<Client> => {

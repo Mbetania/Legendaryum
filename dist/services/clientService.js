@@ -20,20 +20,19 @@ export const removeClient = (client) => __awaiter(void 0, void 0, void 0, functi
 });
 export const getClientById = (clientId) => __awaiter(void 0, void 0, void 0, function* () {
     const clientData = yield redisClient.get(`client:${clientId}`);
-    if (!clientData) {
-        throw new Error("client not found");
+    if (clientData) {
+        let client;
+        try {
+            client = JSON.parse(clientData);
+        }
+        catch (error) {
+            console.error('Error parsing clientData: ', error);
+            throw error;
+        }
+        return client;
     }
-    let client;
-    try {
-        client = JSON.parse(clientData);
-    }
-    catch (error) {
-        console.error('Error parsing client data: ', error);
-    }
-    if (!client.coins) {
-        client.coins = [];
-    }
-    return client;
+    console.error(`Client with id ${clientId} not found.`);
+    throw new Error('Client not found');
 });
 export const authenticateClientById = (clientId) => __awaiter(void 0, void 0, void 0, function* () {
     const id = clientId || uuidv4();

@@ -27,7 +27,7 @@ export const createRoom = async (roomData?: Partial<Room>): Promise<Room> => {
 export const getRoomById = async (roomId: string): Promise<Room | null> => {
   const roomData = await redisClient.get(`room:${roomId}`);
   if (!roomData) {
-    return null;
+    throw new Error('Room not found');
   }
 
   let room;
