@@ -1,11 +1,7 @@
 import { Request, Response } from "express";
 import { HTTP_STATUS } from "../../types/http";
 import * as roomService from "../../services/roomService";
-import { getClientById } from "../../services/clientService";
-import redisClient from "../../services/redis";
-import { v4 as uuidv4 } from 'uuid';
-import config from "../../utils/readJSONConfig";
-import { Room } from "../../types/room";
+
 
 
 export const createRoom = async (req: Request, res: Response) => {

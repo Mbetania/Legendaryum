@@ -64,7 +64,8 @@ export const generateCoins = (room) => __awaiter(void 0, void 0, void 0, functio
             isCollected: false
         };
         coins.push(coin);
-        yield redisClient.set(`coins:${coin.id}`, JSON.stringify(coin));
+        // Set the coin with a TTL of 3600 seconds (1 hour)
+        yield redisClient.set(`coins:${coin.id}`, JSON.stringify(coin), 'EX', coin.ttl);
         yield redisClient.sadd(`room:${room.id}:coins`, coin.id);
     }
     room.coins = coins.map(coin => ({ id: coin.id, position: coin.position, ttl: coin.ttl, isCollected: coin.isCollected }));

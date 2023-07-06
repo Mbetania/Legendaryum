@@ -65,7 +65,8 @@ export const generateCoins = async (room: Room): Promise<Coin[]> => {
     };
     coins.push(coin);
 
-    await redisClient.set(`coins:${coin.id}`, JSON.stringify(coin));
+    // Set the coin with a TTL of 3600 seconds (1 hour)
+    await redisClient.set(`coins:${coin.id}`, JSON.stringify(coin), 'EX', coin.ttl);
     await redisClient.sadd(`room:${room.id}:coins`, coin.id);
   }
 

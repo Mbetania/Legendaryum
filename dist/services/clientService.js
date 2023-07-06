@@ -11,6 +11,7 @@ import redisClient from "./redis";
 import { generateToken } from "./authService";
 import { v4 as uuidv4 } from 'uuid';
 import { ClientStatus } from "../types/client";
+import { getCoinsOfUser } from "./coinService";
 export const createClient = (client) => __awaiter(void 0, void 0, void 0, function* () {
     const clientData = JSON.stringify(client);
     yield redisClient.set(`client:${client.id}`, clientData);
@@ -29,10 +30,10 @@ export const getClientById = (clientId) => __awaiter(void 0, void 0, void 0, fun
             console.error('Error parsing clientData: ', error);
             throw error;
         }
+        client.coins = yield getCoinsOfUser(clientId);
         return client;
     }
-    console.error(`Client with id ${clientId} not found.`);
-    throw new Error('Client not found');
+    throw new Error(`Client with id ${clientId} not found.`);
 });
 export const authenticateClientById = (clientId) => __awaiter(void 0, void 0, void 0, function* () {
     const id = clientId || uuidv4();

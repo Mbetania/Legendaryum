@@ -1,8 +1,8 @@
 import redisClient from "./redis";
 import { generateToken } from "./authService";
 import { v4 as uuidv4 } from 'uuid';
-import { Coin } from "../types/coin";
 import { Client, ClientStatus } from "../types/client";
+import { getCoinsOfUser } from "./coinService";
 
 
 export const createClient = async (client: Client): Promise<void> => {
@@ -24,10 +24,13 @@ export const getClientById = async (clientId: string): Promise<Client> => {
       console.error('Error parsing clientData: ', error);
       throw error;
     }
+
+    client.coins = await getCoinsOfUser(clientId);
+
     return client;
   }
-  console.error(`Client with id ${clientId} not found.`);
-  throw new Error('Client not found');
+
+  throw new Error(`Client with id ${clientId} not found.`);
 }
 
 

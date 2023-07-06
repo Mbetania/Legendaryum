@@ -1,10 +1,8 @@
 import redisClient from "./redis";
 import { Room } from "../types/room";
 import { v4 as uuidv4 } from 'uuid';
-import { getClientById } from "./clientService";
 import config from '../utils/readJSONConfig'
 import { generateCoins } from "./coinService";
-import { error } from "console";
 
 export const createRoom = async (roomData?: Partial<Room>): Promise<Room> => {
   const room: Room = {
