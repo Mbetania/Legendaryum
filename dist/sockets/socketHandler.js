@@ -98,5 +98,8 @@ export const socketHandler = (io) => {
                 socket.emit('error', { message: 'Unable to grab coin' });
             }
         }));
+        socket.on('disconnect', () => {
+            console.log('A user has disconnected:', socket.id);
+        });
     });
 };

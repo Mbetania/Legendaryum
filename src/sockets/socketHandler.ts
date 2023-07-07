@@ -3,7 +3,6 @@ import { createRoom, getRoomById, joinRoom } from '../services/roomService';
 import { authenticateClientById, getClientById } from '../services/clientService';
 import { generateCoins, grabCoin, isCoinAssociatedToUser } from '../services/coinService';
 import { v4 as uuidv4 } from 'uuid';
-import { Room } from '../types/room';
 
 export let socketToClientMap: { [socketId: string]: string } = {};
 
@@ -107,6 +106,9 @@ export const socketHandler = (io: Server) => {
         console.error('Error in grab coin: ', error);
         socket.emit('error', { message: 'Unable to grab coin' });
       }
+    });
+    socket.on('disconnect', () => {
+      console.log('A user has disconnected:', socket.id);
     });
   });
 }
