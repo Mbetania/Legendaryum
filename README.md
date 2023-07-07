@@ -1,21 +1,21 @@
 # Legendaryum
 
 ## Descripción del Proyecto
-Legendaryum es un microservicio donde los clientes pueden conectarse e ingresar a una sala para jugar con otro cliente. La idea principal es agarrar las monedas disponibles. Si el cliente no desea jugar, puede realizar consultas para ver cuántas monedas tiene en total.
+Legendaryum es un microservicio en el cual los clientes pueden conectarse e ingresar a una sala para jugar con otro cliente. La idea principal es recoger las monedas disponibles. Si el cliente no desea jugar, puede realizar consultas para ver cuántas monedas ha recolectado en total.
 
-Un cliente puede crear la sala y el otro recibe un ID para unirse a esa sala. Una vez que ambos clientes están en la sala, se generan las monedas, las cuales pueden ser recolectadas solo por uno de los clientes. Cada moneda tiene un tiempo de vida útil de 1 hora y ocupa un espacio en un entorno 3D.
+Un cliente puede crear una sala y el otro recibe un ID para unirse a esa sala. Una vez que ambos clientes están en la sala, se generan monedas, las cuales pueden ser recolectadas sólo por uno de los clientes. Cada moneda tiene un tiempo de vida útil de 1 hora y ocupa un espacio en un entorno 3D.
 
 ## Instalación y Uso
 Este microservicio está dockerizado para facilitar su despliegue. A continuación, se detallan los pasos para instalar y utilizar el servicio:
 
 ### Requisitos Previos
-Necesitarás tener Docker y Docker Compose instalados en tu máquina. Si aún no los tienes, puedes descargarlos desde aquí:
+Es necesario tener Docker y Docker Compose instalados:
 
 - [Docker]
 - [Docker Compose]
 
 ### Instalación y Ejecución
-1. Clona este repositorio en tu máquina local utilizando `git clone`.
+1. Clona este repositorio utilizando `git clone`.
 2. Navega al directorio del proyecto: `cd legendaryum`.
 3. Construye y levanta el servicio con Docker Compose: `docker-compose up --build`.
 
@@ -75,4 +75,4 @@ El Cliente CLI es un interfaz de texto, útil para pruebas rápidas y para inter
 El Cliente UI es una interfaz gráfica construida con React y Three.js, que permite una interacción visual con el juego en un navegador web. Este se encuentra en un proyecto aparte denominado legendaryum-front.
 Para ejecutar el Cliente UI, primero deberás clonar el repositorio, luego instalarlo mediante `pnpm install`. Luego utiliza el siguiente comando en el directorio del proyecto legendaryum-front:
 `pnpm dev`
-Este comando inicia el entorno de desarrollo y abre una nueva ventana del navegador con la interfaz de usuario del juego, permitiendo a los usuarios moverse en el entorno 3D, recoger monedas e interactuar con otros jugadores en la sala.
+Este comando inicia el entorno de desarrollo y abre una nueva ventana del navegador con la interfaz de usuario del juego, permitiendo a los usuarios moverse en el entorno 3D.
