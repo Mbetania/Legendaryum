@@ -49,23 +49,23 @@ export const joinRoom = async (roomId: string, clientId: string): Promise<Room |
 
   const room: Room = JSON.parse(roomData);
 
-  // Verifica si el cliente ya está en la sala
   if (room.clients?.includes(clientId)) {
-    throw new Error('Client is already in the room');
+    console.log('Cliento in room')
   }
 
-  // Verifica si la sala ha alcanzado su capacidad
-  if (room.clients?.length === room.capacity) {
+  room.clients = room.clients || [];
+
+  const capacity = room.capacity || 0;
+
+  if (room.clients.length >= capacity) {
     throw new Error('Room is full');
   }
 
-  // Instead of storing the full client object, we just store the client ID
-  room.clients?.push(clientId);
+  room.clients.push(clientId);
 
-  // Generar y asignar monedas inmediatamente después de que un cliente se une a la sala
-  if (room.clients?.length === room.capacity) {
-    room.coins = await generateCoins(room); //mapeamos a un arrays de ids de coins
-    room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
+  if (room.clients.length === capacity) {
+    room.coins = await generateCoins(room);
+    room.isActive = true;
   }
 
   await redisClient.set(`room:${roomId}`, JSON.stringify(room));
@@ -73,14 +73,11 @@ export const joinRoom = async (roomId: string, clientId: string): Promise<Room |
   return room;
 };
 
-
-// Resetear una sala después de un juego
 export const resetRoom = async (roomId: string): Promise<Room> => {
   let roomData = await redisClient.get(`room:${roomId}`);
   let room: Room = roomData ? JSON.parse(roomData) : null;
 
   if (room) {
-    // Aquí puedes restablecer los campos que necesitas, como el estado de la sala y las monedas
     room.isActive = false;
     room.clients = [];
     room.coins = [];

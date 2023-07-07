@@ -4,7 +4,7 @@ import { authenticateClientById, getClientById } from '../services/clientService
 import { generateCoins, grabCoin, isCoinAssociatedToUser } from '../services/coinService';
 import { v4 as uuidv4 } from 'uuid';
 
-export let socketToClientMap: { [socketId: string]: string } = {};
+export let clientList: { [socketId: string]: { clientId: string, roomId?: string } } = {};
 
 export const socketHandler = (io: Server) => {
   io.on('connection', (socket: Socket) => {
@@ -13,7 +13,7 @@ export const socketHandler = (io: Server) => {
     socket.on('authenticate', async (data: { clientId: string }) => {
       const clientId = data.clientId || uuidv4();
       const client = await authenticateClientById(clientId);
-      socketToClientMap[socket.id] = client.id;
+      clientList[socket.id] = { clientId: client.id };
       socket.emit('authenticated', { token: client.token, clientId: client.id });
     });
 
@@ -26,18 +26,19 @@ export const socketHandler = (io: Server) => {
 
       const createdRoom = await createRoom(roomData);
 
-      // Aquí obtenemos el clientId asociado con el socket actual
-      const clientId = socketToClientMap[socket.id];
+      const clientInfo = clientList[socket.id];
 
-      if (clientId) {
-        // Aquí intentamos unir al cliente a la sala que acaba de crear
+      if (clientInfo && clientInfo.clientId) {
         try {
-          const joinedRoom = await joinRoom(createdRoom.id, clientId);
+          const joinedRoom = await joinRoom(createdRoom.id, clientInfo.clientId);
+          if (joinedRoom && joinedRoom.id) {
+            clientInfo.roomId = joinedRoom.id; // Actualizar la sala del cliente.
+          } else {
+            throw new Error('Error: la sala unida es undefined o null');
+          }
 
-          // Emitir el evento 'joined room' al cliente que creó la sala
           socket.emit('joined room', joinedRoom);
 
-          // Ahora se activa la sala y se generan las monedas
           if (joinedRoom && !joinedRoom.isActive && !joinedRoom.coins) {
             joinedRoom.isActive = true;
             joinedRoom.coins = await generateCoins(joinedRoom);
@@ -45,7 +46,6 @@ export const socketHandler = (io: Server) => {
             io.to(createdRoom.id).emit('coins generated', { coins: joinedRoom.coins });
           }
 
-          // Emitir el evento 'room created' a todos los otros clientes
           io.emit('room created', createdRoom);
           console.log('Servidor: emitido evento "room created"');
 
@@ -62,12 +62,17 @@ export const socketHandler = (io: Server) => {
       if (client) {
         try {
           const room = await joinRoom(data.roomId, client.id);
+          if (room && room.id) {
+            clientList[socket.id].roomId = room.id; // Actualizar la sala del cliente.
+          } else {
+            throw new Error('Error: la sala unida es undefined o null')
+          }
+
           io.to(data.roomId).emit('client joined', { clientId: client?.id });
           console.log(`User ${socket.id} joined room ${room?.id}`);
           socket.emit('joined room', room);
           console.log(`Servidor: emitido evento "joined room" para el socket ${socket.id}`);
 
-          // La sala se activa y se generan las monedas cuando se ha unido el último cliente
           if (room && !room.isActive && !room.coins) {
             room.isActive = true;
             room.coins = await generateCoins(room);
@@ -109,6 +114,7 @@ export const socketHandler = (io: Server) => {
     });
     socket.on('disconnect', () => {
       console.log('A user has disconnected:', socket.id);
+      delete clientList[socket.id];
     });
   });
 }

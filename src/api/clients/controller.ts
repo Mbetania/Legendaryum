@@ -7,7 +7,6 @@ import { generateToken } from "../../services/authService";
 import { ClientStatus } from "../../types/client";
 
 
-//* GET
 export const getClientById = async (req: Request, res: Response) => {
   const clientId = req.params.clientId;
   try {
@@ -19,7 +18,6 @@ export const getClientById = async (req: Request, res: Response) => {
 };
 
 
-//* POST
 export const createClient = async (req: Request, res: Response) => {
   try {
     const id = uuidv4();
@@ -44,7 +42,6 @@ export const authenticateClientById = async (req: Request, res: Response) => {
   res.json(client);
 };
 
-//* DELETE
 export const removeClientById = async (req: Request, res: Response) => {
   const clientId = req.params.clientId;
   const client = await clientService.getClientById(clientId);

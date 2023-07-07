@@ -2,7 +2,7 @@ import { Coin } from '../types/coin';
 import { v4 as uuidv4 } from 'uuid';
 import { Room } from '../types/room';
 import redisClient from "./redis";
-import { getClientById } from './clientService';
+import multi from 'ioredis';
 import { getRoomById } from './roomService';
 
 export const getCoinsOfUser = async (clientId: string): Promise<Coin[]> => {
@@ -83,34 +83,37 @@ export const isCoinAssociatedToUser = async (clientId: string, coinId: string): 
   return isMember === 1;
 };
 
-export const grabCoin = async (roomId: string, clientId: string, coinId: string) => {
-  try {
-    const coin = await getCoinById(coinId);
-    const room = await getRoomById(roomId);
-    const client = await getClientById(clientId);
+export const grabCoin = async (roomId: string, clientId: string, coinId: string): Promise<void> => {
+  const roomCoinsKey = `room:${roomId}:coins`;
+  const clientCoinsKey = `client:${clientId}:coins`;
 
-    if (!coin) {
-      throw new Error(`Coin with id ${coinId} not found.`);
-    }
-    if (!room) {
-      throw new Error(`Room with id ${roomId} not found.`);
-    }
-    if (!client) {
-      throw new Error(`Client with id ${clientId} not found.`);
-    }
+  const coinExistsInRoom = await redisClient.sismember(roomCoinsKey, coinId);
 
-    if (coin.isCollected) {
-      throw new Error(`Coin with id ${coinId} has already been collected.`);
-    }
+  if (!coinExistsInRoom) {
+    throw new Error('Coin does not exist in this room');
+  }
 
-    coin.isCollected = true;
-    await redisClient.set(`coins:${coin.id}`, JSON.stringify(coin));
-    await redisClient.sadd(`client:${clientId}:coins`, coin.id);
+  const coin = await getCoinById(coinId);
 
-    await removeCoinFromRoom(roomId, coin.id)
-  } catch (error) {
-    console.error('Error in grabCoin: ', error)
-    throw error;
+  if (!coin) {
+    throw new Error('Coin does not exist');
+  }
+
+  coin.isCollected = true;
+
+  await redisClient.set(`coins:${coin.id}`, JSON.stringify(coin), 'EX', coin.ttl);
+
+  const pipeline = redisClient.multi();
+
+  pipeline.srem(roomCoinsKey, coinId);
+  pipeline.sadd(clientCoinsKey, coinId);
+
+  const results = await pipeline.exec();
+  if (!results) {
+    throw new Error('Could not execute pipeline');
+  }
+  if (results[0][1] !== 1 || results[1][1] !== 1) {
+    throw new Error('Could not grab the coin');
   }
 }
 

@@ -11,7 +11,6 @@ import redisClient from "./redis";
 import { generateToken } from "./authService";
 import { v4 as uuidv4 } from 'uuid';
 import { ClientStatus } from "../types/client";
-import { getCoinsOfUser } from "./coinService";
 export const createClient = (client) => __awaiter(void 0, void 0, void 0, function* () {
     const clientData = JSON.stringify(client);
     yield redisClient.set(`client:${client.id}`, clientData);
@@ -30,7 +29,10 @@ export const getClientById = (clientId) => __awaiter(void 0, void 0, void 0, fun
             console.error('Error parsing clientData: ', error);
             throw error;
         }
-        client.coins = yield getCoinsOfUser(clientId);
+        // Aquí también puedes optar por devolver solo los IDs de las monedas en lugar de los objetos de monedas completos,
+        // si no necesitas toda la información de la moneda aquí.
+        const coinIds = yield redisClient.smembers(`client:${clientId}:coins`);
+        client.coins = coinIds;
         return client;
     }
     throw new Error(`Client with id ${clientId} not found.`);
@@ -52,4 +54,7 @@ export const authenticateClientById = (clientId) => __awaiter(void 0, void 0, vo
         user = newClient;
     }
     return user;
+});
+export const addCoinToClient = (clientId, coinId) => __awaiter(void 0, void 0, void 0, function* () {
+    yield redisClient.sadd(`client:${clientId}:coins`, coinId);
 });

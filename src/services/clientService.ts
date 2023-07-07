@@ -25,13 +25,16 @@ export const getClientById = async (clientId: string): Promise<Client> => {
       throw error;
     }
 
-    client.coins = await getCoinsOfUser(clientId);
+    // Aquí también puedes optar por devolver solo los IDs de las monedas en lugar de los objetos de monedas completos,
+    // si no necesitas toda la información de la moneda aquí.
+    const coinIds = await redisClient.smembers(`client:${clientId}:coins`);
+    client.coins = coinIds;
 
     return client;
   }
 
   throw new Error(`Client with id ${clientId} not found.`);
-}
+};
 
 
 
@@ -52,3 +55,7 @@ export const authenticateClientById = async (clientId: string): Promise<Client> 
   }
   return user;
 }
+
+export const addCoinToClient = async (clientId: string, coinId: string): Promise<void> => {
+  await redisClient.sadd(`client:${clientId}:coins`, coinId);
+};
