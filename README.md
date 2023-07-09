@@ -69,7 +69,7 @@ Es necesario tener Docker y Docker Compose instalados:
 
 **Cliente CLI (Interfaz de línea de comandos)**
 El Cliente CLI es un interfaz de texto, útil para pruebas rápidas y para interactuar con el servidor sin necesidad de una interfaz gráfica. Para ejecutar el Cliente CLI, utiliza el comando:
-`pnpm buildAndTest`
+`pnpm socket`
 
 **Cliente de la Interfaz de Usuario (UI)**
 El Cliente UI es una interfaz gráfica construida con React y Three.js, que permite una interacción visual con el juego en un navegador web. Este se encuentra en un proyecto aparte denominado legendaryum-front.
