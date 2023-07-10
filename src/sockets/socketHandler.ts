@@ -42,7 +42,6 @@ export const socketHandler = (io: Server) => {
 
 
           io.emit('room created', createdRoom);
-          console.log('Server: emitted "room created" event');
 
         } catch (error) {
           console.error('Error joining room:', error);
@@ -70,9 +69,7 @@ export const socketHandler = (io: Server) => {
 
           io.to(data.roomId).emit('client joined', { clientId: client?.id });
           console.log(`User ${socket.id} joined room ${room?.id}`);
-          console.log(`Emitted "client joined" event for client ${client?.id} in room ${data.roomId}`);
           socket.emit('joined room', room);
-          console.log(`Server: Emitted "joined room" event for socket ${socket.id}`);
 
           if (room && !room.isActive && !room.coins) {
             room.isActive = true;
@@ -90,14 +87,12 @@ export const socketHandler = (io: Server) => {
     });
 
     socket.on('grab coin', async ({ roomId, clientId, coinId }) => {
-      console.log(`User ${clientId} grabbed coin ${coinId} in room ${roomId}`);
       try {
         const coinGrabbed = await isCoinAssociatedToUser(clientId, coinId);
         if (coinGrabbed) {
           socket.emit('error', { message: 'Coin has already been grabbed' });
           return;
         }
-        console.log(`User ${clientId} is trying to grab coin ${coinId} in room ${roomId}`);
 
         await grabCoin(roomId, clientId, coinId);
         io.to(roomId).emit('coinUnaVailable', coinId);
@@ -113,7 +108,6 @@ export const socketHandler = (io: Server) => {
         console.error('Error in grab coin: ', error);
         socket.emit('error', { message: 'Unable to grab coin' });
       }
-      console.log(`User ${clientId} is trying to grab coin ${coinId} in room ${roomId}`);
 
     });
     socket.on('disconnect', () => {
