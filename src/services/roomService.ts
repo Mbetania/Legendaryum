@@ -40,7 +40,6 @@ export const getRoomById = async (roomId: string): Promise<Room | null> => {
 };
 
 
-// Unir a un cliente a una sala
 export const joinRoom = async (roomId: string, clientId: string): Promise<Room | null> => {
   const roomData = await redisClient.get(`room:${roomId}`);
   if (!roomData) {

@@ -1,10 +1,3 @@
-enum HTTP_METHODS {
-  GET = "GET",
-  POST = "POST",
-  PATCH = "PATCH",
-  UPDATE = "UPDATE",
-  DELETE = "DELETE",
-}
 enum HTTP_STATUS {
   OK = 200,
   CREATED = 201,
@@ -18,4 +11,4 @@ enum HTTP_STATUS {
 }
 
 
-export { HTTP_METHODS, HTTP_STATUS };
+export { HTTP_STATUS };
