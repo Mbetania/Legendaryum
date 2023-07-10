@@ -15,15 +15,15 @@ const main = async () => {
     let clientId = clientIds[i];
 
     socket.on('connect', () => {
-      console.log('Conectado al servidor.');
+      console.log('Connected to the server.');
 
       socket.on('authenticated', (data) => {
-        console.log('Autenticado: ', data);
+        console.log('Autenticated: ', data);
         clientId = data.clientId;
 
         socket.on('room created', (createdRoom: Room) => {
-          console.log('Cliente:', clientId, 'recibió evento "room created"');
-          console.log('Sala creada: ', createdRoom);
+          console.log('Client:', clientId, 'received event "room created"');
+          console.log('Create room', createdRoom);
           room = createdRoom;
 
           const joinData = { roomId: room.id, clientId: clientId };
@@ -31,8 +31,8 @@ const main = async () => {
         });
 
         socket.on('joined room', (joinedRoom: Room) => {
-          console.log('Cliente:', clientId, 'recibió evento "joined room"');
-          console.log('Unido a la sala: ', JSON.stringify(joinedRoom, null, 2));
+          console.log('Client:', clientId, 'received "joined room" event');
+          console.log('Connected to the room', JSON.stringify(joinedRoom, null, 2));
           joinRoomAndGrabCoin(socket, joinedRoom, clientId);
         });
 
@@ -46,16 +46,16 @@ const main = async () => {
       socket.emit('authenticate', { clientId: clientId });
 
       socket.on('client data', (clientData) => {
-        console.log('Datos del cliente recibidos: ', clientData);
+        console.log('Customer data received: ', clientData);
       });
 
       socket.on('room updated', (updatedRoom: Room) => {
-        console.log('La sala ha sido actualizada: ', updatedRoom);
+        console.log('The room has been updated: ', updatedRoom);
         room = updatedRoom;
       });
 
       socket.on('disconnect', () => {
-        console.log('Desconectado del servidor.');
+        console.log('Disconnected from server.');
       });
 
       socket.on('error', (error) => {

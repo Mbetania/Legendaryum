@@ -34,7 +34,7 @@ export const socketHandler = (io: Server) => {
           if (joinedRoom && joinedRoom.id) {
             clientInfo.roomId = joinedRoom.id; // Actualizar la sala del cliente.
           } else {
-            throw new Error('Error: la sala unida es undefined o null');
+            throw new Error('Error: the joined room is undefined or null');
           }
 
           socket.emit('joined room', joinedRoom);
@@ -47,11 +47,11 @@ export const socketHandler = (io: Server) => {
           }
 
           io.emit('room created', createdRoom);
-          console.log('Servidor: emitido evento "room created"');
+          console.log('Server: emitted "room created" event');
 
         } catch (error) {
-          console.error('Error al unir a la sala:', error);
-          socket.emit('error', { message: 'No se puede unir a la sala.' });
+          console.error('Error joining room:', error);
+          socket.emit('error', { message: 'Error joining room:' });
         }
       }
     });
@@ -63,15 +63,15 @@ export const socketHandler = (io: Server) => {
         try {
           const room = await joinRoom(data.roomId, client.id);
           if (room && room.id) {
-            clientList[socket.id].roomId = room.id; // Actualizar la sala del cliente.
+            clientList[socket.id].roomId = room.id;
           } else {
-            throw new Error('Error: la sala unida es undefined o null')
+            throw new Error('Error: Joined room is undefined or null')
           }
 
           io.to(data.roomId).emit('client joined', { clientId: client?.id });
           console.log(`User ${socket.id} joined room ${room?.id}`);
           socket.emit('joined room', room);
-          console.log(`Servidor: emitido evento "joined room" para el socket ${socket.id}`);
+          console.log(`Server: Emitted "joined room" event for socket ${socket.id}`);
 
           if (room && !room.isActive && !room.coins) {
             room.isActive = true;
