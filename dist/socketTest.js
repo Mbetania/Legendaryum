@@ -10,44 +10,41 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { io } from 'socket.io-client';
 import { v4 as uuidv4 } from 'uuid';
 const URL = 'http://localhost:3000';
-let sockets = [];
 let clientIds = [uuidv4(), uuidv4()];
-let room = null;
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     for (let i = 0; i < 2; i++) {
         let socket = io(URL);
-        sockets.push(socket);
         let clientId = clientIds[i];
         socket.on('connect', () => {
             console.log('Connected to the server.');
             socket.on('authenticated', (data) => {
-                console.log('Autenticated: ', data);
+                console.log('Authenticated: ', data);
+                console.log('Emitted "authenticate" event with data:', authData);
                 clientId = data.clientId;
-                socket.on('coins generated', (data, room) => {
-                    let coins = [];
-                    console.log('Monedas generadas: ', data);
-                    coins = data.coins;
-                    if (coins.length > 0) {
-                        const coinToGrab = coins[0];
-                        const grabCoinData = {
-                            coinId: coinToGrab.id,
-                            roomId: room.id,
-                            clientId: clientId,
-                        };
-                        socket.emit('grab coin', grabCoinData);
-                    }
-                });
+                console.log('Emitted 2 "authenticate" event with data:', authData);
                 socket.on('room created', (createdRoom) => {
                     console.log('Client:', clientId, 'received event "room created"');
                     console.log('Create room', createdRoom);
-                    room = createdRoom;
-                    const joinData = { roomId: room.id, clientId: clientId };
+                    const joinData = { roomId: createdRoom.id, clientId: clientId };
                     socket.emit('join room', joinData);
                 });
                 socket.on('joined room', (joinedRoom) => {
                     console.log('Client:', clientId, 'received "joined room" event');
                     console.log('Connected to the room', JSON.stringify(joinedRoom, null, 2));
-                    joinRoomAndGrabCoin(socket, joinedRoom, clientId);
+                    // listen for 'coins generated' event here
+                    socket.once('coins generated', (data) => {
+                        console.log('Coins generated: ', data);
+                        const coins = data.coins;
+                        if (coins.length > 0) {
+                            const coinToGrab = coins[0];
+                            const grabCoinData = {
+                                coinId: coinToGrab.id,
+                                roomId: joinedRoom.id,
+                                clientId: clientId,
+                            };
+                            socket.emit('grab coin', grabCoinData);
+                        }
+                    });
                 });
                 if (i === 0) {
                     const roomData = { name: 'testroom', password: 'testpassword' };
@@ -55,13 +52,12 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
                 }
             });
             const authData = { clientId: clientId, username: 'testuser' };
-            socket.emit('authenticate', { clientId: clientId });
+            socket.emit('authenticate', authData);
             socket.on('client data', (clientData) => {
                 console.log('Customer data received: ', clientData);
             });
             socket.on('room updated', (updatedRoom) => {
                 console.log('The room has been updated: ', updatedRoom);
-                room = updatedRoom;
             });
             socket.on('disconnect', () => {
                 console.log('Disconnected from server.');
@@ -72,20 +68,4 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
 });
-function joinRoomAndGrabCoin(socket, joinedRoom, clientId) {
-    let coins = [];
-    socket.on('coins generated', (data) => {
-        console.log('Coins generated: ', data);
-        coins = data.coins;
-        if (coins.length > 0) {
-            const coinToGrab = coins[0];
-            const grabCoinData = {
-                coinId: coinToGrab.id,
-                roomId: joinedRoom.id,
-                clientId: clientId,
-            };
-            socket.emit('grab coin', grabCoinData);
-        }
-    });
-}
 main();

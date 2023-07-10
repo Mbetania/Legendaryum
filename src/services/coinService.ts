@@ -49,7 +49,7 @@ export const getCoinsInRoom = async (room: string): Promise<Coin[]> => {
 };
 
 
-// Genera una serie de monedas para una sala específica.
+
 export const generateCoins = async (room: Room): Promise<Coin[]> => {
   const coins: Coin[] = [];
   for (let i = 0; i < room.coinsAmount; i++) {
@@ -65,7 +65,7 @@ export const generateCoins = async (room: Room): Promise<Coin[]> => {
     };
     coins.push(coin);
 
-    // Set the coin with a TTL of 3600 seconds (1 hour)
+
     await redisClient.set(`coins:${coin.id}`, JSON.stringify(coin), 'EX', coin.ttl);
     await redisClient.sadd(`room:${room.id}:coins`, coin.id);
   }

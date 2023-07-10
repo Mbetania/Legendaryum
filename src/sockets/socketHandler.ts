@@ -3,6 +3,7 @@ import { createRoom, getRoomById, joinRoom } from '../services/roomService';
 import { authenticateClientById, getClientById } from '../services/clientService';
 import { generateCoins, grabCoin, isCoinAssociatedToUser } from '../services/coinService';
 import { v4 as uuidv4 } from 'uuid';
+import { Room } from '../types/room';
 
 export let clientList: { [socketId: string]: { clientId: string, roomId?: string } } = {};
 
@@ -11,7 +12,7 @@ export const socketHandler = (io: Server) => {
     console.log('A user connected with id', socket.id);
 
     socket.on('authenticate', async (data: { clientId: string }) => {
-      const clientId = data.clientId || uuidv4();
+      let clientId = data.clientId || uuidv4();
       const client = await authenticateClientById(clientId);
       clientList[socket.id] = { clientId: client.id };
       socket.emit('authenticated', { token: client.token, clientId: client.id });
@@ -32,19 +33,13 @@ export const socketHandler = (io: Server) => {
         try {
           const joinedRoom = await joinRoom(createdRoom.id, clientInfo.clientId);
           if (joinedRoom && joinedRoom.id) {
-            clientInfo.roomId = joinedRoom.id; // Actualizar la sala del cliente.
+            clientInfo.roomId = joinedRoom.id;
           } else {
             throw new Error('Error: the joined room is undefined or null');
           }
 
           socket.emit('joined room', joinedRoom);
 
-          if (joinedRoom && !joinedRoom.isActive && !joinedRoom.coins) {
-            joinedRoom.isActive = true;
-            joinedRoom.coins = await generateCoins(joinedRoom);
-
-            io.to(createdRoom.id).emit('coins generated', { coins: joinedRoom.coins });
-          }
 
           io.emit('room created', createdRoom);
           console.log('Server: emitted "room created" event');
@@ -61,15 +56,21 @@ export const socketHandler = (io: Server) => {
       const client = await getClientById(data.clientId);
       if (client) {
         try {
-          const room = await joinRoom(data.roomId, client.id);
-          if (room && room.id) {
-            clientList[socket.id].roomId = room.id;
-          } else {
-            throw new Error('Error: Joined room is undefined or null')
+          const room: Room | null = await getRoomById(data.roomId);
+          if (room) {
+            if (room.clients?.includes(client.id)) {
+              console.log(`User ${client.id} is already in the room ${room.id}`);
+              return;
+            }
+            const joinedRoom = await joinRoom(room.id, client.id);
+            if (joinedRoom && joinedRoom.id) {
+              clientList[socket.id].roomId = joinedRoom.id;
+            }
           }
 
           io.to(data.roomId).emit('client joined', { clientId: client?.id });
           console.log(`User ${socket.id} joined room ${room?.id}`);
+          console.log(`Emitted "client joined" event for client ${client?.id} in room ${data.roomId}`);
           socket.emit('joined room', room);
           console.log(`Server: Emitted "joined room" event for socket ${socket.id}`);
 
@@ -96,6 +97,7 @@ export const socketHandler = (io: Server) => {
           socket.emit('error', { message: 'Coin has already been grabbed' });
           return;
         }
+        console.log(`User ${clientId} is trying to grab coin ${coinId} in room ${roomId}`);
 
         await grabCoin(roomId, clientId, coinId);
         io.to(roomId).emit('coinUnaVailable', coinId);
@@ -111,6 +113,8 @@ export const socketHandler = (io: Server) => {
         console.error('Error in grab coin: ', error);
         socket.emit('error', { message: 'Unable to grab coin' });
       }
+      console.log(`User ${clientId} is trying to grab coin ${coinId} in room ${roomId}`);
+
     });
     socket.on('disconnect', () => {
       console.log('A user has disconnected:', socket.id);

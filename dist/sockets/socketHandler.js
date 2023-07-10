@@ -16,7 +16,7 @@ export const socketHandler = (io) => {
     io.on('connection', (socket) => {
         console.log('A user connected with id', socket.id);
         socket.on('authenticate', (data) => __awaiter(void 0, void 0, void 0, function* () {
-            const clientId = data.clientId || uuidv4();
+            let clientId = data.clientId || uuidv4();
             const client = yield authenticateClientById(clientId);
             clientList[socket.id] = { clientId: client.id };
             socket.emit('authenticated', { token: client.token, clientId: client.id });
@@ -38,11 +38,6 @@ export const socketHandler = (io) => {
                         throw new Error('Error: the joined room is undefined or null');
                     }
                     socket.emit('joined room', joinedRoom);
-                    if (joinedRoom && !joinedRoom.isActive && !joinedRoom.coins) {
-                        joinedRoom.isActive = true;
-                        joinedRoom.coins = yield generateCoins(joinedRoom);
-                        io.to(createdRoom.id).emit('coins generated', { coins: joinedRoom.coins });
-                    }
                     io.emit('room created', createdRoom);
                     console.log('Server: emitted "room created" event');
                 }
@@ -53,18 +48,24 @@ export const socketHandler = (io) => {
             }
         }));
         socket.on('join room', (data) => __awaiter(void 0, void 0, void 0, function* () {
+            var _a;
             const client = yield getClientById(data.clientId);
             if (client) {
                 try {
-                    const room = yield joinRoom(data.roomId, client.id);
-                    if (room && room.id) {
-                        clientList[socket.id].roomId = room.id;
-                    }
-                    else {
-                        throw new Error('Error: Joined room is undefined or null');
+                    const room = yield getRoomById(data.roomId);
+                    if (room) {
+                        if ((_a = room.clients) === null || _a === void 0 ? void 0 : _a.includes(client.id)) {
+                            console.log(`User ${client.id} is already in the room ${room.id}`);
+                            return;
+                        }
+                        const joinedRoom = yield joinRoom(room.id, client.id);
+                        if (joinedRoom && joinedRoom.id) {
+                            clientList[socket.id].roomId = joinedRoom.id;
+                        }
                     }
                     io.to(data.roomId).emit('client joined', { clientId: client === null || client === void 0 ? void 0 : client.id });
                     console.log(`User ${socket.id} joined room ${room === null || room === void 0 ? void 0 : room.id}`);
+                    console.log(`Emitted "client joined" event for client ${client === null || client === void 0 ? void 0 : client.id} in room ${data.roomId}`);
                     socket.emit('joined room', room);
                     console.log(`Server: Emitted "joined room" event for socket ${socket.id}`);
                     if (room && !room.isActive && !room.coins) {
@@ -90,6 +91,7 @@ export const socketHandler = (io) => {
                     socket.emit('error', { message: 'Coin has already been grabbed' });
                     return;
                 }
+                console.log(`User ${clientId} is trying to grab coin ${coinId} in room ${roomId}`);
                 yield grabCoin(roomId, clientId, coinId);
                 io.to(roomId).emit('coinUnaVailable', coinId);
                 io.to(roomId).emit('coin grabbed', { coinId: coinId, clientId: clientId });
@@ -103,6 +105,7 @@ export const socketHandler = (io) => {
                 console.error('Error in grab coin: ', error);
                 socket.emit('error', { message: 'Unable to grab coin' });
             }
+            console.log(`User ${clientId} is trying to grab coin ${coinId} in room ${roomId}`);
         }));
         socket.on('disconnect', () => {
             console.log('A user has disconnected:', socket.id);

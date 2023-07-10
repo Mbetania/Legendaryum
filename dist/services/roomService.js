@@ -40,7 +40,7 @@ export const joinRoom = (roomId, clientId) => __awaiter(void 0, void 0, void 0, 
     }
     const room = JSON.parse(roomData);
     if ((_a = room.clients) === null || _a === void 0 ? void 0 : _a.includes(clientId)) {
-        console.log('Cliento in room');
+        console.log('Client in room');
     }
     room.clients = room.clients || [];
     const capacity = room.capacity || 0;

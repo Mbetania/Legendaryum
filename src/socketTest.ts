@@ -4,52 +4,49 @@ import { Room } from './types/room';
 import { v4 as uuidv4 } from 'uuid';
 
 const URL = 'http://localhost:3000';
-let sockets: Socket[] = [];
 let clientIds: string[] = [uuidv4(), uuidv4()];
-let room: Room | null = null;
 
 const main = async () => {
   for (let i = 0; i < 2; i++) {
     let socket = io(URL);
-    sockets.push(socket);
     let clientId = clientIds[i];
 
     socket.on('connect', () => {
       console.log('Connected to the server.');
 
       socket.on('authenticated', (data) => {
-        console.log('Autenticated: ', data);
+        console.log('Authenticated: ', data);
+        console.log('Emitted "authenticate" event with data:', authData);
         clientId = data.clientId;
+        console.log('Emitted 2 "authenticate" event with data:', authData);
 
-        socket.on('coins generated', (data: { coins: Coin[] }, room) => {
-          let coins: Coin[] = [];
-
-          console.log('Monedas generadas: ', data);
-          coins = data.coins;
-
-          if (coins.length > 0) {
-            const coinToGrab = coins[0];
-            const grabCoinData = {
-              coinId: coinToGrab.id,
-              roomId: room.id,
-              clientId: clientId,
-            };
-            socket.emit('grab coin', grabCoinData);
-          }
-        });
         socket.on('room created', (createdRoom: Room) => {
           console.log('Client:', clientId, 'received event "room created"');
           console.log('Create room', createdRoom);
-          room = createdRoom;
 
-          const joinData = { roomId: room.id, clientId: clientId };
+          const joinData = { roomId: createdRoom.id, clientId: clientId };
           socket.emit('join room', joinData);
         });
 
         socket.on('joined room', (joinedRoom: Room) => {
           console.log('Client:', clientId, 'received "joined room" event');
           console.log('Connected to the room', JSON.stringify(joinedRoom, null, 2));
-          joinRoomAndGrabCoin(socket, joinedRoom, clientId);
+
+
+          socket.once('coins generated', (data: { coins: Coin[] }) => {
+            console.log('Coins generated: ', data);
+            const coins = data.coins;
+
+            if (coins.length > 0) {
+              const coinToGrab = coins[0];
+              const grabCoinData = {
+                coinId: coinToGrab.id,
+                roomId: joinedRoom.id,
+                clientId: clientId,
+              };
+              socket.emit('grab coin', grabCoinData);
+            }
+          });
         });
 
         if (i === 0) {
@@ -59,7 +56,7 @@ const main = async () => {
       });
 
       const authData = { clientId: clientId, username: 'testuser' };
-      socket.emit('authenticate', { clientId: clientId });
+      socket.emit('authenticate', authData);
 
       socket.on('client data', (clientData) => {
         console.log('Customer data received: ', clientData);
@@ -67,7 +64,6 @@ const main = async () => {
 
       socket.on('room updated', (updatedRoom: Room) => {
         console.log('The room has been updated: ', updatedRoom);
-        room = updatedRoom;
       });
 
       socket.on('disconnect', () => {
@@ -78,27 +74,7 @@ const main = async () => {
         console.error('Error: ', error);
       });
     });
-
   }
 };
-
-function joinRoomAndGrabCoin(socket: Socket, joinedRoom: Room, clientId: string) {
-  let coins: Coin[] = [];
-
-  socket.on('coins generated', (data: { coins: Coin[] }) => {
-    console.log('Coins generated: ', data);
-    coins = data.coins;
-
-    if (coins.length > 0) {
-      const coinToGrab = coins[0];
-      const grabCoinData = {
-        coinId: coinToGrab.id,
-        roomId: joinedRoom.id,
-        clientId: clientId,
-      };
-      socket.emit('grab coin', grabCoinData);
-    }
-  });
-}
 
 main();
