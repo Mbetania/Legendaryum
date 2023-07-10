@@ -14,8 +14,6 @@ RUN pnpm install
 # Copia el resto de los archivos del proyecto
 COPY . .
 
-# Expone el puerto que tu aplicación usará
 EXPOSE 3000
 
-# Comando para iniciar tu aplicación
 CMD [ "pnpm", "start" ]
