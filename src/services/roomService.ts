@@ -18,6 +18,8 @@ export const createRoom = async (roomData?: Partial<Room>): Promise<Room> => {
 
   const roomString = JSON.stringify(room)
   await redisClient.set(`room:${room.id}`, roomString);
+  console.log("Created room:", room);
+  console.log("Got room from Redis:", roomData);
   return room;
 };
 

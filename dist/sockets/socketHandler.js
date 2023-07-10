@@ -32,7 +32,7 @@ export const socketHandler = (io) => {
                 try {
                     const joinedRoom = yield joinRoom(createdRoom.id, clientInfo.clientId);
                     if (joinedRoom && joinedRoom.id) {
-                        clientInfo.roomId = joinedRoom.id; // Actualizar la sala del cliente.
+                        clientInfo.roomId = joinedRoom.id;
                     }
                     else {
                         throw new Error('Error: the joined room is undefined or null');

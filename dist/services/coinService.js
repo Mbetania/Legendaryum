@@ -48,7 +48,6 @@ export const getCoinsInRoom = (room) => __awaiter(void 0, void 0, void 0, functi
     console.log(`Retrieved ${coins.length} coins from room ${room}`);
     return coins.filter((coin) => coin !== null);
 });
-// Genera una serie de monedas para una sala específica.
 export const generateCoins = (room) => __awaiter(void 0, void 0, void 0, function* () {
     const coins = [];
     for (let i = 0; i < room.coinsAmount; i++) {
@@ -63,7 +62,6 @@ export const generateCoins = (room) => __awaiter(void 0, void 0, void 0, functio
             isCollected: false
         };
         coins.push(coin);
-        // Set the coin with a TTL of 3600 seconds (1 hour)
         yield redisClient.set(`coins:${coin.id}`, JSON.stringify(coin), 'EX', coin.ttl);
         yield redisClient.sadd(`room:${room.id}:coins`, coin.id);
     }

@@ -31,7 +31,6 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
                 socket.on('joined room', (joinedRoom) => {
                     console.log('Client:', clientId, 'received "joined room" event');
                     console.log('Connected to the room', JSON.stringify(joinedRoom, null, 2));
-                    // listen for 'coins generated' event here
                     socket.once('coins generated', (data) => {
                         console.log('Coins generated: ', data);
                         const coins = data.coins;
