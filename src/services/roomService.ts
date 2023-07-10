@@ -18,8 +18,6 @@ export const createRoom = async (roomData?: Partial<Room>): Promise<Room> => {
 
   const roomString = JSON.stringify(room)
   await redisClient.set(`room:${room.id}`, roomString);
-  console.log("Created room:", room);
-  console.log("Got room from Redis:", roomData);
   return room;
 };
 
@@ -51,7 +49,6 @@ export const joinRoom = async (roomId: string, clientId: string): Promise<Room |
   const room: Room = JSON.parse(roomData);
 
   if (room.clients?.includes(clientId)) {
-    console.log('Client in room')
   }
 
   room.clients = room.clients || [];

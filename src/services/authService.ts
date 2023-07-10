@@ -11,7 +11,6 @@ export const verifyToken = (token: string): string | object => {
     const decoded = jwt.verify(token, JWT_TOKEN);
     return decoded;
   } catch (err) {
-    console.log('error verifying token:', err);
     throw new Error('Token verification failed')
   }
 }

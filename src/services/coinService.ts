@@ -44,7 +44,6 @@ export const getCoinsInRoom = async (room: string): Promise<Coin[]> => {
 
   const coins = await Promise.all(coinIds.map(coinId => getCoinById(coinId)));
 
-  console.log(`Retrieved ${coins.length} coins from room ${room}`);
   return coins.filter((coin): coin is Coin => coin !== null);
 };
 

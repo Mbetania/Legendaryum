@@ -2,7 +2,6 @@ import redisClient from "./redis";
 import { generateToken } from "./authService";
 import { v4 as uuidv4 } from 'uuid';
 import { Client, ClientStatus } from "../types/client";
-import { getCoinsOfUser } from "./coinService";
 
 
 export const createClient = async (client: Client): Promise<void> => {
