@@ -13,7 +13,6 @@ import redisClient from "../../services/redis";
 import { v4 as uuidv4 } from 'uuid';
 import { generateToken } from "../../services/authService";
 import { ClientStatus } from "../../types/client";
-//* GET
 export const getClientById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const clientId = req.params.clientId;
     try {
@@ -24,7 +23,6 @@ export const getClientById = (req, res) => __awaiter(void 0, void 0, void 0, fun
         res.status(HTTP_STATUS.NOT_FOUND).send('Client not found');
     }
 });
-//* POST
 export const createClient = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const id = uuidv4();
@@ -47,7 +45,6 @@ export const authenticateClientById = (req, res) => __awaiter(void 0, void 0, vo
     const client = yield clientService.authenticateClientById(clientId);
     res.json(client);
 });
-//* DELETE
 export const removeClientById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const clientId = req.params.clientId;
     const client = yield clientService.getClientById(clientId);

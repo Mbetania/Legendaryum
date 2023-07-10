@@ -75,26 +75,30 @@ export const isCoinAssociatedToUser = (clientId, coinId) => __awaiter(void 0, vo
     const isMember = yield redisClient.sismember(`client:${clientId}:coins`, coinId);
     return isMember === 1;
 });
-export function grabCoin(roomId, clientId, coinId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const roomCoinsKey = `room:${roomId}:coins`;
-        const clientCoinsKey = `client:${clientId}:coins`;
-        const coinExistsInRoom = yield redisClient.sismember(roomCoinsKey, coinId);
-        if (!coinExistsInRoom) {
-            throw new Error('Coin does not exist in this room');
-        }
-        const pipeline = redisClient.multi();
-        pipeline.srem(roomCoinsKey, coinId);
-        pipeline.sadd(clientCoinsKey, coinId);
-        const results = yield pipeline.exec();
-        if (!results) {
-            throw new Error('Could not execute pipeline');
-        }
-        if (results[0][1] !== 1 || results[1][1] !== 1) {
-            throw new Error('Could not grab the coin');
-        }
-    });
-}
+export const grabCoin = (roomId, clientId, coinId) => __awaiter(void 0, void 0, void 0, function* () {
+    const roomCoinsKey = `room:${roomId}:coins`;
+    const clientCoinsKey = `client:${clientId}:coins`;
+    const coinExistsInRoom = yield redisClient.sismember(roomCoinsKey, coinId);
+    if (!coinExistsInRoom) {
+        throw new Error('Coin does not exist in this room');
+    }
+    const coin = yield getCoinById(coinId);
+    if (!coin) {
+        throw new Error('Coin does not exist');
+    }
+    coin.isCollected = true;
+    yield redisClient.set(`coins:${coin.id}`, JSON.stringify(coin), 'EX', coin.ttl);
+    const pipeline = redisClient.multi();
+    pipeline.srem(roomCoinsKey, coinId);
+    pipeline.sadd(clientCoinsKey, coinId);
+    const results = yield pipeline.exec();
+    if (!results) {
+        throw new Error('Could not execute pipeline');
+    }
+    if (results[0][1] !== 1 || results[1][1] !== 1) {
+        throw new Error('Could not grab the coin');
+    }
+});
 export const getUserCoinsIds = (clientId) => __awaiter(void 0, void 0, void 0, function* () {
     const coinIds = yield redisClient.smembers(`client:${clientId}:coins`);
     return coinIds;

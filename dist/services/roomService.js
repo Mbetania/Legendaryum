@@ -34,36 +34,32 @@ export const getRoomById = (roomId) => __awaiter(void 0, void 0, void 0, functio
 });
 // Unir a un cliente a una sala
 export const joinRoom = (roomId, clientId) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d;
+    var _a;
     const roomData = yield redisClient.get(`room:${roomId}`);
     if (!roomData) {
         throw new Error("room not found");
     }
     const room = JSON.parse(roomData);
-    // Verifica si el cliente ya está en la sala
     if ((_a = room.clients) === null || _a === void 0 ? void 0 : _a.includes(clientId)) {
-        throw new Error('Client is already in the room');
+        console.log('Cliento in room');
     }
-    // Verifica si la sala ha alcanzado su capacidad
-    if (((_b = room.clients) === null || _b === void 0 ? void 0 : _b.length) === room.capacity) {
+    room.clients = room.clients || [];
+    const capacity = room.capacity || 0;
+    if (room.clients.length >= capacity) {
         throw new Error('Room is full');
     }
-    // Instead of storing the full client object, we just store the client ID
-    (_c = room.clients) === null || _c === void 0 ? void 0 : _c.push(clientId);
-    // Generar y asignar monedas inmediatamente después de que un cliente se une a la sala
-    if (((_d = room.clients) === null || _d === void 0 ? void 0 : _d.length) === room.capacity) {
-        room.coins = yield generateCoins(room); //mapeamos a un arrays de ids de coins
-        room.isActive = true; // The game starts now that all clients have joined and the coins have been generated
+    room.clients.push(clientId);
+    if (room.clients.length === capacity) {
+        room.coins = yield generateCoins(room);
+        room.isActive = true;
     }
     yield redisClient.set(`room:${roomId}`, JSON.stringify(room));
     return room;
 });
-// Resetear una sala después de un juego
 export const resetRoom = (roomId) => __awaiter(void 0, void 0, void 0, function* () {
     let roomData = yield redisClient.get(`room:${roomId}`);
     let room = roomData ? JSON.parse(roomData) : null;
     if (room) {
-        // Aquí puedes restablecer los campos que necesitas, como el estado de la sala y las monedas
         room.isActive = false;
         room.clients = [];
         room.coins = [];
