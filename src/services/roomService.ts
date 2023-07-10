@@ -49,7 +49,7 @@ export const joinRoom = async (roomId: string, clientId: string): Promise<Room |
   const room: Room = JSON.parse(roomData);
 
   if (room.clients?.includes(clientId)) {
-    console.log('Cliento in room')
+    console.log('Client in room')
   }
 
   room.clients = room.clients || [];

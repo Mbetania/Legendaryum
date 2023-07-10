@@ -21,6 +21,22 @@ const main = async () => {
         console.log('Autenticated: ', data);
         clientId = data.clientId;
 
+        socket.on('coins generated', (data: { coins: Coin[] }, room) => {
+          let coins: Coin[] = [];
+
+          console.log('Monedas generadas: ', data);
+          coins = data.coins;
+
+          if (coins.length > 0) {
+            const coinToGrab = coins[0];
+            const grabCoinData = {
+              coinId: coinToGrab.id,
+              roomId: room.id,
+              clientId: clientId,
+            };
+            socket.emit('grab coin', grabCoinData);
+          }
+        });
         socket.on('room created', (createdRoom: Room) => {
           console.log('Client:', clientId, 'received event "room created"');
           console.log('Create room', createdRoom);
@@ -70,7 +86,7 @@ function joinRoomAndGrabCoin(socket: Socket, joinedRoom: Room, clientId: string)
   let coins: Coin[] = [];
 
   socket.on('coins generated', (data: { coins: Coin[] }) => {
-    console.log('Monedas generadas: ', data);
+    console.log('Coins generated: ', data);
     coins = data.coins;
 
     if (coins.length > 0) {

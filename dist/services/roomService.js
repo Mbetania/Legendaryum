@@ -32,7 +32,6 @@ export const getRoomById = (roomId) => __awaiter(void 0, void 0, void 0, functio
     }
     return room;
 });
-// Unir a un cliente a una sala
 export const joinRoom = (roomId, clientId) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const roomData = yield redisClient.get(`room:${roomId}`);
